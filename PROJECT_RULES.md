@@ -194,6 +194,8 @@ The coding AI must not:
 * Claim that a finding is verified without applying the defined verification process
 * Add major research components without documenting the change
 
+The implementation must use the repository's schemas as the canonical data contracts. It must not create alternative undocumented formats for communication between components.
+
 ---
 
 ## 14. Implementation Before Optimization

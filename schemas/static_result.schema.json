@@ -1,0 +1,48 @@
+{
+"$schema": "https://json-schema.org/draft/2020-12/schema",
+"title": "Static Analysis Result",
+"type": "object",
+"required": [
+"result_id",
+"finding_id",
+"tool",
+"matched"
+],
+"properties": {
+"result_id": {
+"type": "string"
+},
+"finding_id": {
+"type": ["string", "null"]
+},
+"tool": {
+"type": "string",
+"enum": [
+"semgrep",
+"bandit"
+]
+},
+"matched": {
+"type": "boolean"
+},
+"rule_id": {
+"type": ["string", "null"]
+},
+"severity": {
+"type": ["string", "null"]
+},
+"file": {
+"type": ["string", "null"]
+},
+"start_line": {
+"type": ["integer", "null"]
+},
+"end_line": {
+"type": ["integer", "null"]
+},
+"message": {
+"type": ["string", "null"]
+}
+},
+"additionalProperties": false
+}

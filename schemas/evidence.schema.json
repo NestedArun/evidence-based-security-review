@@ -1,0 +1,90 @@
+{
+"$schema": "https://json-schema.org/draft/2020-12/schema",
+"title": "Evidence",
+"type": "object",
+"required": [
+"evidence_id",
+"finding_id"
+],
+"properties": {
+"evidence_id": {
+"type": "string"
+},
+"finding_id": {
+"type": "string"
+},
+"source": {
+"type": ["object", "null"],
+"properties": {
+"found": {
+"type": "boolean"
+},
+"file": {
+"type": ["string", "null"]
+},
+"line": {
+"type": ["integer", "null"]
+},
+"code": {
+"type": ["string", "null"]
+},
+"description": {
+"type": ["string", "null"]
+}
+},
+"required": ["found"]
+},
+"sink": {
+"type": ["object", "null"],
+"properties": {
+"found": {
+"type": "boolean"
+},
+"file": {
+"type": ["string", "null"]
+},
+"line": {
+"type": ["integer", "null"]
+},
+"code": {
+"type": ["string", "null"]
+},
+"description": {
+"type": ["string", "null"]
+}
+},
+"required": ["found"]
+},
+"data_flow": {
+"type": ["object", "null"],
+"properties": {
+"found": {
+"type": "boolean"
+},
+"path": {
+"type": "array",
+"items": {
+"type": "string"
+}
+},
+"description": {
+"type": ["string", "null"]
+}
+},
+"required": ["found"]
+},
+"security_control": {
+"type": ["object", "null"],
+"properties": {
+"present": {
+"type": "boolean"
+},
+"description": {
+"type": ["string", "null"]
+}
+},
+"required": ["present"]
+}
+},
+"additionalProperties": false
+}

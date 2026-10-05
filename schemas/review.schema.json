@@ -1,0 +1,38 @@
+{
+"$schema": "https://json-schema.org/draft/2020-12/schema",
+"title": "Review",
+"type": "object",
+"required": [
+"review_id",
+"project_name",
+"language",
+"status",
+"created_at"
+],
+"properties": {
+"review_id": {
+"type": "string"
+},
+"project_name": {
+"type": "string"
+},
+"language": {
+"type": "string",
+"enum": ["python"]
+},
+"status": {
+"type": "string",
+"enum": [
+"PENDING",
+"RUNNING",
+"COMPLETED",
+"FAILED"
+]
+},
+"created_at": {
+"type": "string",
+"format": "date-time"
+}
+},
+"additionalProperties": false
+}
