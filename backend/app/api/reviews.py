@@ -22,12 +22,15 @@ from sqlalchemy.orm import Session
 
 from app.models import CodeUnitRow, ReviewRow, SourceFileRow, utcnow
 from app.processing.service import process_review
+from app.processing.ai import run_ai_review
 from app.schemas import (
     CodeUnit,
     ProcessingSummary,
     Review,
     ReviewCreate,
     SourceFileOut,
+    AIProcessingSummary,
+    FindingOut,
 )
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
@@ -126,3 +129,43 @@ def list_code_units(
         stmt = stmt.where(CodeUnitRow.file == file)
     rows = db.scalars(stmt.order_by(CodeUnitRow.file, CodeUnitRow.start_line, CodeUnitRow.chunk_index)).all()
     return [CodeUnit.model_validate(r) for r in rows]
+
+
+@router.post("/{review_id}/ai-review", response_model=AIProcessingSummary)
+def ai_review(review_id: str, request: Request, db: Session = Depends(get_db)):
+    """Run the four Checkpoint-2 agents over persisted code units.
+
+    Findings are hypotheses only. No evidence or final decision is created here.
+    """
+    review = _get_review_or_404(db, review_id)
+    if review.status != "RUNNING":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Review is {review.status}; AI review requires a processed RUNNING review",
+        )
+    try:
+        findings = run_ai_review(db, review, request.app.state.project_config)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=502, detail=f"AI review failed: {type(exc).__name__}: {exc}") from exc
+
+    return AIProcessingSummary(
+        review_id=review.review_id,
+        agents=["security_review", "owasp_cwe", "crypto", "auth"],
+        code_units=db.query(CodeUnitRow).filter(CodeUnitRow.review_id == review_id).count(),
+        findings=len(findings),
+        status=review.status,
+    )
+
+
+@router.get("/{review_id}/findings", response_model=list[FindingOut])
+def list_findings(review_id: str, db: Session = Depends(get_db)):
+    _get_review_or_404(db, review_id)
+    from app.models import FindingRow
+    rows = db.scalars(
+        select(FindingRow)
+        .where(FindingRow.review_id == review_id)
+        .order_by(FindingRow.file, FindingRow.start_line, FindingRow.agent, FindingRow.finding_id)
+    ).all()
+    return [FindingOut.model_validate(r) for r in rows]

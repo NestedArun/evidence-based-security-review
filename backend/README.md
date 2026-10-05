@@ -1,7 +1,6 @@
 # Backend (Checkpoint 1: foundation)
 
-FastAPI + SQLAlchemy/SQLite + Pydantic + Tree-sitter code processing. No LLM, evidence,
-static-analysis, correlation, judge or evaluation logic yet (Checkpoints 2-6).
+FastAPI + SQLAlchemy/SQLite + Pydantic + Tree-sitter code processing + local Ollama AI review (Checkpoint 2). Evidence, static analysis, correlation, judge and evaluation remain for later checkpoints.
 
 ## Run
     cd backend
@@ -19,6 +18,8 @@ static-analysis, correlation, judge or evaluation logic yet (Checkpoints 2-6).
 | POST | /reviews/{id}/process | run Code Processing; review becomes RUNNING (FAILED on error) |
 | GET | /reviews/{id}/files | discovered source files (.py), skip reasons, sha256 |
 | GET | /reviews/{id}/code-units[?file=] | extracted code units |
+| POST | /reviews/{id}/ai-review | run four local Ollama agents and persist candidate findings |
+| GET | /reviews/{id}/findings | candidate findings |
 
 A review stays `RUNNING` after processing because later pipeline stages do not exist yet;
 `COMPLETED` is reserved for a finished pipeline. Submitted code is only read, never executed.
@@ -31,3 +32,7 @@ A review stays `RUNNING` after processing because later pipeline stages do not e
 `function` / `method` (decorators included), `class` (class-body statements between methods),
 `module` (top-level statements between definitions). Units never overlap; long units are split
 into line chunks (`chunk_index`). Line numbers are 1-based and match the original file.
+
+
+## Checkpoint 2
+Set `EBSR_OLLAMA_MODEL` to the installed local Ollama model (for example `gemma3:4b`). The AI endpoint requires a processed review in `RUNNING` state. Ollama errors are returned explicitly; no findings are fabricated. Candidate findings are hypotheses only.

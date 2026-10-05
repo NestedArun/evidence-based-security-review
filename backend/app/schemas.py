@@ -173,3 +173,15 @@ class ProcessingSummary(BaseModel):
     files_skipped: int
     code_units: int
     skipped: list[SkippedFile]
+
+
+class AIProcessingSummary(BaseModel):
+    review_id: str
+    agents: list[AgentName]
+    code_units: int
+    findings: int
+    status: ReviewStatus
+
+
+class FindingOut(CandidateFinding):
+    pass
