@@ -1,0 +1,60 @@
+{
+"project": {
+"name": "evidence-based-security-review",
+"version": "0.1.0"
+},
+
+"analysis": {
+"language": "python",
+
+
+"vulnerability_categories": [
+  "sql_injection",
+  "command_injection",
+  "hardcoded_secret",
+  "weak_cryptography",
+  "authentication_authorization"
+],
+
+"agents": [
+  "security_review",
+  "owasp_cwe",
+  "crypto",
+  "auth"
+]
+
+
+},
+
+"llm": {
+"provider": "ollama",
+"model": "CONFIGURE_LOCALLY",
+"temperature": 0.0
+},
+
+"static_analysis": {
+"semgrep": {
+"enabled": true
+},
+"bandit": {
+"enabled": true
+}
+},
+
+"decision": {
+"statuses": [
+"VERIFIED",
+"UNCERTAIN",
+"REJECTED"
+]
+},
+
+"evaluation": {
+"metrics": [
+"precision",
+"recall",
+"false_positive_rate",
+"evidence_completeness"
+]
+}
+}

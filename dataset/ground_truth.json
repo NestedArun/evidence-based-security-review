@@ -1,0 +1,96 @@
+{
+  "dataset_version": "0.1",
+  "language": "python",
+  "samples": [
+    {
+      "id": "V001",
+      "file": "vulnerable/V001_sql_injection.py",
+      "category": "sql_injection",
+      "cwe": "CWE-89",
+      "expected_vulnerable": true,
+      "severity": "HIGH",
+      "start_line": 5,
+      "end_line": 5
+    },
+    {
+      "id": "S001",
+      "file": "secure/S001_sql_injection.py",
+      "category": "sql_injection",
+      "cwe": "CWE-89",
+      "expected_vulnerable": false,
+      "severity": null
+    },
+    {
+      "id": "V002",
+      "file": "vulnerable/V002_command_injection.py",
+      "category": "command_injection",
+      "cwe": "CWE-78",
+      "expected_vulnerable": true,
+      "severity": "CRITICAL",
+      "start_line": 5,
+      "end_line": 5
+    },
+    {
+      "id": "S002",
+      "file": "secure/S002_command_injection.py",
+      "category": "command_injection",
+      "cwe": "CWE-78",
+      "expected_vulnerable": false,
+      "severity": null
+    },
+    {
+      "id": "V003",
+      "file": "vulnerable/V003_hardcoded_secret.py",
+      "category": "hardcoded_secret",
+      "cwe": "CWE-798",
+      "expected_vulnerable": true,
+      "severity": "HIGH",
+      "start_line": 1,
+      "end_line": 1
+    },
+    {
+      "id": "S003",
+      "file": "secure/S003_hardcoded_secret.py",
+      "category": "hardcoded_secret",
+      "cwe": "CWE-798",
+      "expected_vulnerable": false,
+      "severity": null
+    },
+    {
+      "id": "V004",
+      "file": "vulnerable/V004_weak_cryptography.py",
+      "category": "weak_cryptography",
+      "cwe": "CWE-327",
+      "expected_vulnerable": true,
+      "severity": "HIGH",
+      "start_line": 4,
+      "end_line": 4
+    },
+    {
+      "id": "S004",
+      "file": "secure/S004_weak_cryptography.py",
+      "category": "weak_cryptography",
+      "cwe": "CWE-327",
+      "expected_vulnerable": false,
+      "severity": null
+    },
+    {
+      "id": "V005",
+      "file": "vulnerable/V005_auth_authorization.py",
+      "category": "authentication_authorization",
+      "cwe": "CWE-862",
+      "expected_vulnerable": true,
+      "severity": "HIGH",
+      "start_line": 2,
+      "end_line": 6
+    },
+    {
+      "id": "S005",
+      "file": "secure/S005_auth_authorization.py",
+      "category": "authentication_authorization",
+      "cwe": "CWE-862",
+      "expected_vulnerable": false,
+      "severity": null
+    }
+  ]
+}
