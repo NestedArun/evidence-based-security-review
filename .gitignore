@@ -1,0 +1,77 @@
+# Python
+
+**pycache**/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+
+.venv/
+venv/
+env/
+
+# Environment variables
+
+.env
+.env.*
+
+# IDE
+
+.vscode/
+.idea/
+
+# OS
+
+.DS_Store
+Thumbs.db
+
+# Test and coverage
+
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build artifacts
+
+build/
+dist/
+*.egg-info/
+
+# Logs
+
+*.log
+logs/
+
+# Local databases
+
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated reports
+
+reports/generated/
+
+# Temporary files
+
+tmp/
+temp/
+
+# Model/cache files
+
+models/
+ollama/
+.cache/
+
+# Node
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Frontend build
+
+frontend/dist/
+frontend/build/
