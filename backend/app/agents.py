@@ -66,10 +66,8 @@ Use only line numbers inside the supplied unit.
 def _prompt(spec: AgentSpec, unit: CodeUnit) -> str:
     return f"""Agent role: {spec.name}
 Focus: {spec.focus}
-Allowed categories: {", ".join(spec.categories)}
 
 Review metadata:
-file={unit.file}
 unit_type={unit.unit_type}
 function={unit.function_name}
 class={unit.class_name}

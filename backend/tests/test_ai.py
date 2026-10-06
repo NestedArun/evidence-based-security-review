@@ -4,7 +4,7 @@ import pytest
 
 from app.agents import AGENTS, run_agent
 from app.llm import OllamaClient, OllamaError
-from app.schemas import CodeUnit
+from app.schemas import AgentName, CodeUnit
 
 
 def unit():
@@ -14,12 +14,45 @@ def unit():
         source_code="def get_user(x):\n    q = f\"SELECT * FROM users WHERE id={x}\"\n    return q\n",
     )
 
+def test_agent_prompt_does_not_expose_canonical_categories():
+    unit = CodeUnit(
+        review_id="review-1",
+        unit_id="unit-1",
+        file="vulnerable/V001.py",
+        language="python",
+        unit_type="function",
+        function_name="example",
+        class_name=None,
+        start_line=1,
+        end_line=2,
+        source_code="def example(x):\n    return x",
+    )
+
+    spec = next(agent for agent in AGENTS if agent.name == "security_review")
+
+    client = FakeClient(
+        '{"has_finding": false}'
+    )
+
+    run_agent(client, spec, unit)
+
+    prompt = client.last_prompt
+
+    assert "sql_injection" not in prompt
+    assert "command_injection" not in prompt
+    assert "hardcoded_secret" not in prompt
+    assert "weak_cryptography" not in prompt
+    assert "authentication_authorization" not in prompt
 
 class FakeClient:
     def __init__(self, payload):
         self.payload = payload
+        self.last_prompt = None
 
-    def chat_json(self, system, user):
+    def chat_json(self, system, prompt):
+        self.last_prompt = prompt
+        if isinstance(self.payload, str):
+            return json.loads(self.payload)
         return self.payload
 
 
@@ -68,8 +101,7 @@ def test_agent_normalizes_model_severity_and_category_case():
 def test_agent_rejects_wrong_category():
     payload = {"has_finding": True, "title": "x", "category": "authentication_authorization",
                "severity": "HIGH", "start_line": 2, "description": "x"}
-    with pytest.raises(ValueError, match="outside"):
-        run_agent(FakeClient(payload), AGENTS[2], unit())
+    assert run_agent(FakeClient(payload), AGENTS[2], unit()) is None
 
 
 def test_no_finding_is_allowed():
