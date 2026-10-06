@@ -25,6 +25,7 @@ from app.processing.service import process_review
 from app.processing.ai import run_ai_review
 from app.processing.evidence import run_evidence_verification
 from app.processing.static_analysis import run_static_analysis
+from app.processing.decision import run_decision_review
 from app.schemas import (
     CodeUnit,
     ProcessingSummary,
@@ -36,6 +37,7 @@ from app.schemas import (
     Evidence,
     EvidenceProcessingSummary,
     StaticAnalysisResult,
+    Decision,
 )
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
@@ -245,3 +247,35 @@ def list_findings(review_id: str, db: Session = Depends(get_db)):
         .order_by(FindingRow.file, FindingRow.start_line, FindingRow.agent, FindingRow.finding_id)
     ).all()
     return [FindingOut.model_validate(r) for r in rows]
+
+@router.post("/{review_id}/decision", response_model=list[Decision])
+def decision_review(review_id: str, db: Session = Depends(get_db)):
+    """Run Checkpoint 5 deterministic evidence-based decisions."""
+    review = _get_review_or_404(db, review_id)
+    if review.status != "RUNNING":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Review is {review.status}; decision requires a RUNNING review",
+        )
+    try:
+        decisions = run_decision_review(db, review)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Decision stage failed: {type(exc).__name__}: {exc}")
+    return decisions
+
+
+@router.get("/{review_id}/decisions", response_model=list[Decision])
+def list_decisions(review_id: str, db: Session = Depends(get_db)):
+    """Return persisted Checkpoint 5 decisions for a review."""
+    _get_review_or_404(db, review_id)
+    from app.models import DecisionRow
+    rows = db.scalars(
+        select(DecisionRow)
+        .join(FindingRow, DecisionRow.finding_id == FindingRow.finding_id)
+        .where(FindingRow.review_id == review_id)
+        .order_by(FindingRow.file, FindingRow.start_line, DecisionRow.decision_id)
+    ).all()
+    return [Decision.model_validate(row) for row in rows]
+
