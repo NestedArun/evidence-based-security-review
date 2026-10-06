@@ -20,9 +20,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import CodeUnitRow, ReviewRow, SourceFileRow, utcnow
+from app.models import CodeUnitRow, FindingRow, ReviewRow, SourceFileRow, utcnow
 from app.processing.service import process_review
 from app.processing.ai import run_ai_review
+from app.processing.evidence import run_evidence_verification
 from app.schemas import (
     CodeUnit,
     ProcessingSummary,
@@ -31,6 +32,8 @@ from app.schemas import (
     SourceFileOut,
     AIProcessingSummary,
     FindingOut,
+    Evidence,
+    EvidenceProcessingSummary,
 )
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
@@ -157,6 +160,49 @@ def ai_review(review_id: str, request: Request, db: Session = Depends(get_db)):
         findings=len(findings),
         status=review.status,
     )
+
+
+@router.post("/{review_id}/evidence", response_model=EvidenceProcessingSummary)
+def evidence_review(review_id: str, db: Session = Depends(get_db)):
+    """Independently verify persisted candidate findings against source code.
+
+    This checkpoint creates evidence only; it does not create a final decision.
+    """
+    review = _get_review_or_404(db, review_id)
+    if review.status != "RUNNING":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Review is {review.status}; evidence verification requires a RUNNING review",
+        )
+    try:
+        evidence = run_evidence_verification(db, review)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Evidence verification failed: {type(exc).__name__}: {exc}",
+        ) from exc
+
+    return EvidenceProcessingSummary(
+        review_id=review.review_id,
+        findings=len(evidence),
+        evidence_created=len(evidence),
+        status=review.status,
+    )
+
+
+@router.get("/{review_id}/evidence", response_model=list[Evidence])
+def list_evidence(review_id: str, db: Session = Depends(get_db)):
+    _get_review_or_404(db, review_id)
+    from app.models import EvidenceRow
+    rows = db.scalars(
+        select(EvidenceRow)
+        .join(FindingRow, EvidenceRow.finding_id == FindingRow.finding_id)
+        .where(FindingRow.review_id == review_id)
+        .order_by(EvidenceRow.evidence_id)
+    ).all()
+    return [Evidence.model_validate(r) for r in rows]
 
 
 @router.get("/{review_id}/findings", response_model=list[FindingOut])

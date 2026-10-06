@@ -134,3 +134,8 @@ def test_submitted_code_is_never_executed(client, make_project):
     assert not marker.exists()
     assert (root / "evil.py").read_bytes() == before  # analysed source is not modified
     assert client.get(f"/reviews/{rid}/code-units").json()[0]["unit_type"] == "module"
+
+
+def test_evidence_requires_running_review(client, make_project):
+    rid = _create(client, make_project({"a.py": "x = 1\n"})).json()["review_id"]
+    assert client.post(f"/reviews/{rid}/evidence").status_code == 409

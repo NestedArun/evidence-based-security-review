@@ -92,6 +92,11 @@ Multiple LLM agents agreeing is **not** independent verification.
 
 Static-analysis results must remain distinguishable from LLM results.
 
+
+LLM prompts must use neutral sample/file identifiers. Never expose
+dataset directory names, filenames, vulnerability categories, or
+ground-truth labels to the AI agents during prediction.
+
 Never fabricate:
 
 * findings

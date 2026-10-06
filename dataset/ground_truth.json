@@ -82,7 +82,7 @@
       "expected_vulnerable": true,
       "severity": "HIGH",
       "start_line": 2,
-      "end_line": 6
+      "end_line": 5
     },
     {
       "id": "S005",

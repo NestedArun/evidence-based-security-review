@@ -228,3 +228,27 @@ When implementation constraints conflict with the research design:
 2. Document the conflict.
 3. Propose alternatives.
 4. Do not silently change the research methodology.
+
+## 17. Dataset Label Leakage Prevention
+
+Dataset labels and category information must not be exposed to the AI
+review agents during analysis.
+
+Paths or filenames containing labels such as:
+
+- `secure/`
+- `vulnerable/`
+- `sql_injection`
+- `command_injection`
+- `hardcoded_secret`
+- `weak_cryptography`
+- `authentication_authorization`
+
+must not be included in LLM prompts.
+
+The analysis system should provide neutral file/sample identifiers to
+the LLM while preserving the original file paths internally for
+evidence traceability and evaluation.
+
+Ground-truth labels must remain available only to the evaluation
+component and must not be used during the prediction/review stage.

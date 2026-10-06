@@ -175,6 +175,13 @@ class ProcessingSummary(BaseModel):
     skipped: list[SkippedFile]
 
 
+class EvidenceProcessingSummary(BaseModel):
+    review_id: str
+    findings: int
+    evidence_created: int
+    status: ReviewStatus
+
+
 class AIProcessingSummary(BaseModel):
     review_id: str
     agents: list[AgentName]
