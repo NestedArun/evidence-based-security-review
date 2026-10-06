@@ -28,8 +28,21 @@ def test_all_tables_round_trip_and_keep_decision_separate(tmp_path):
     s.add_all([
         EvidenceRow(evidence_id="e1", finding_id="f1", source={"found": True}, sink=None,
                     data_flow={"found": False, "path": []}, security_control={"present": False}),
-        StaticResultRow(result_id="s1", finding_id=None, tool="semgrep", matched=False),
-        StaticResultRow(result_id="s2", finding_id="f1", tool="bandit", matched=True, rule_id="B303"),
+        StaticResultRow(
+            result_id="s1",
+            review_id="r1",
+            finding_id=None,
+            tool="ast_rules",
+            matched=False,
+        ),
+        StaticResultRow(
+            result_id="s2",
+            review_id="r1",
+            finding_id="f1",
+            tool="bandit",
+            matched=True,
+            rule_id="B303",
+        ),
         DecisionRow(decision_id="d1", finding_id="f1", status="UNCERTAIN",
                     evidence_score=40.0, confidence=0.4, reason="r"),
         SourceFileRow(file_id="sf1", review_id="r1", path="a.py", language="python",

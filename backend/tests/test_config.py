@@ -12,7 +12,7 @@ def test_real_project_config_loads(repo_root):
     assert cfg.analysis.agents == ["security_review", "owasp_cwe", "crypto", "auth"]
     assert cfg.decision.statuses == ["VERIFIED", "UNCERTAIN", "REJECTED"]
     assert cfg.llm.provider == "ollama"
-    assert cfg.static_analysis.semgrep.enabled and cfg.static_analysis.bandit.enabled
+    assert cfg.static_analysis.bandit.enabled and cfg.static_analysis.ast_rules.enabled
 
 
 def test_invalid_config_is_rejected(tmp_path, repo_root):

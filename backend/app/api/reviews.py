@@ -24,6 +24,7 @@ from app.models import CodeUnitRow, FindingRow, ReviewRow, SourceFileRow, utcnow
 from app.processing.service import process_review
 from app.processing.ai import run_ai_review
 from app.processing.evidence import run_evidence_verification
+from app.processing.static_analysis import run_static_analysis
 from app.schemas import (
     CodeUnit,
     ProcessingSummary,
@@ -34,6 +35,7 @@ from app.schemas import (
     FindingOut,
     Evidence,
     EvidenceProcessingSummary,
+    StaticAnalysisResult,
 )
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
@@ -203,6 +205,34 @@ def list_evidence(review_id: str, db: Session = Depends(get_db)):
         .order_by(EvidenceRow.evidence_id)
     ).all()
     return [Evidence.model_validate(r) for r in rows]
+
+
+@router.post("/{review_id}/static-analysis", response_model=list[StaticAnalysisResult])
+def static_analysis(review_id: str, request: Request, db: Session = Depends(get_db)):
+    """Run independent Windows-native static analyzers; no final decision is made."""
+    review = _get_review_or_404(db, review_id)
+    if review.status != "RUNNING":
+        raise HTTPException(status_code=409, detail=f"Review is {review.status}; static analysis requires a RUNNING review")
+    try:
+        rows = run_static_analysis(db, review, request.app.state.project_config)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Static analysis failed: {type(exc).__name__}: {exc}") from exc
+    return [StaticAnalysisResult.model_validate(row) for row in rows]
+
+
+@router.get("/{review_id}/static-analysis", response_model=list[StaticAnalysisResult])
+def list_static_analysis(review_id: str, db: Session = Depends(get_db)):
+    _get_review_or_404(db, review_id)
+    from app.models import StaticResultRow
+    rows = db.scalars(
+        select(StaticResultRow)
+        .join(FindingRow, StaticResultRow.finding_id == FindingRow.finding_id, isouter=True)
+        .where((FindingRow.review_id == review_id) | (StaticResultRow.finding_id.is_(None)))
+        .order_by(StaticResultRow.tool, StaticResultRow.file, StaticResultRow.start_line, StaticResultRow.result_id)
+    ).all()
+    return [StaticAnalysisResult.model_validate(row) for row in rows]
 
 
 @router.get("/{review_id}/findings", response_model=list[FindingOut])

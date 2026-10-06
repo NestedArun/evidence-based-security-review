@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import TypeDecorator
 
@@ -140,6 +140,7 @@ class StaticResultRow(Base):
     finding_id: Mapped[str | None] = mapped_column(
         ForeignKey("findings.finding_id", ondelete="CASCADE"), index=True, nullable=True
     )
+    review_id = Column(String, nullable=False, index=True)
     tool: Mapped[str] = mapped_column(String, nullable=False)
     matched: Mapped[bool] = mapped_column(Boolean, nullable=False)
     rule_id: Mapped[str | None] = mapped_column(String, nullable=True)

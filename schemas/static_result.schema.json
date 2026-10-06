@@ -18,8 +18,8 @@
 "tool": {
 "type": "string",
 "enum": [
-"semgrep",
-"bandit"
+"bandit",
+"ast_rules"
 ]
 },
 "matched": {

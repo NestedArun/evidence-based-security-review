@@ -45,8 +45,8 @@ class ToolToggle(_Strict):
 
 
 class StaticAnalysisConfig(_Strict):
-    semgrep: ToolToggle
     bandit: ToolToggle
+    ast_rules: ToolToggle
 
 
 class DecisionConfig(_Strict):

@@ -26,7 +26,7 @@ Category = Literal[
 ]
 Severity = Literal["CRITICAL", "HIGH", "MEDIUM", "LOW"]
 DecisionStatus = Literal["VERIFIED", "UNCERTAIN", "REJECTED"]
-StaticTool = Literal["semgrep", "bandit"]
+StaticTool = Literal["bandit", "ast_rules"]
 
 
 class _Contract(BaseModel):
