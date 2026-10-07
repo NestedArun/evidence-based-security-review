@@ -166,3 +166,25 @@ class DecisionRow(Base):
     reason: Mapped[str] = mapped_column(Text, nullable=False)
     remediation: Mapped[str | None] = mapped_column(Text, nullable=True)
     _parent: Mapped["FindingRow"] = relationship(lazy="raise")  # insert-ordering only
+
+
+class EvaluationRunRow(Base):
+    __tablename__ = "evaluation_runs"
+
+    evaluation_id: Mapped[str] = mapped_column(String, primary_key=True)
+    review_id: Mapped[str] = mapped_column(
+        ForeignKey("reviews.review_id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    mode: Mapped[str] = mapped_column(String, nullable=False)
+    true_positives: Mapped[int] = mapped_column(Integer, nullable=False)
+    false_positives: Mapped[int] = mapped_column(Integer, nullable=False)
+    false_negatives: Mapped[int] = mapped_column(Integer, nullable=False)
+    true_negatives: Mapped[int] = mapped_column(Integer, nullable=False)
+    precision: Mapped[float] = mapped_column(Float, nullable=False)
+    recall: Mapped[float] = mapped_column(Float, nullable=False)
+    false_positive_rate: Mapped[float] = mapped_column(Float, nullable=False)
+    evidence_completeness: Mapped[float] = mapped_column(Float, nullable=False)
+    predictions: Mapped[int] = mapped_column(Integer, nullable=False)
+    matched_samples: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False, default=utcnow)
+    _parent: Mapped["ReviewRow"] = relationship(lazy="raise")

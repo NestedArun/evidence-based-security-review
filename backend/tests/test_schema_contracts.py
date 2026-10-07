@@ -5,7 +5,7 @@ import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 from pydantic import ValidationError
 
-from app.schemas import CandidateFinding, Decision, Evidence, Review, StaticAnalysisResult
+from app.schemas import CandidateFinding, Decision, Evidence, EvaluationResult, Review, StaticAnalysisResult
 
 CASES = {
     "review": (Review, {
@@ -26,10 +26,15 @@ CASES = {
     "decision": (Decision, {
         "decision_id": "d1", "finding_id": "f1", "status": "VERIFIED",
         "evidence_score": 80, "confidence": 0.5, "reason": "r"}),
+    "evaluation": (EvaluationResult, {
+        "review_id": "r1", "mode": "proposed",
+        "true_positives": 1, "false_positives": 0, "false_negatives": 0, "true_negatives": 1,
+        "precision": 1.0, "recall": 1.0, "false_positive_rate": 0.0,
+        "evidence_completeness": 1.0, "predictions": 1, "matched_samples": 1}),
 }
 SCHEMA_FILES = {
     "review": "review", "finding": "finding", "evidence": "evidence",
-    "static_result": "static_result", "decision": "decision",
+    "static_result": "static_result", "decision": "decision", "evaluation": "evaluation",
 }
 
 

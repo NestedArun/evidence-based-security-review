@@ -1,0 +1,21 @@
+diff --git a/backend/app/api/reviews.py b/backend/app/api/reviews.py
+--- a/backend/app/api/reviews.py
++++ b/backend/app/api/reviews.py
+@@ -1,5 +1,5 @@
+-"""Review API endpoints."""
++"""Review API endpoints."""
+
+@@ -330,6 +330,15 @@
+-    evaluation = Evaluation(
++    # Evaluation is a replaceable result for a given review/mode.
++    # Remove older rows first so repeated evaluation requests do not
++    # accumulate duplicate/stale results.
++    db.query(Evaluation).filter(
++        Evaluation.review_id == review_id,
++        Evaluation.mode == mode,
++    ).delete(synchronize_session=False)
++
++    evaluation = Evaluation(
+         review_id=review_id,
+         mode=mode,
+         true_positives=result.true_positives,

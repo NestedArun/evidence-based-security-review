@@ -1,0 +1,188 @@
+--- a/backend/app/processing/evaluation.py
++++ b/backend/app/processing/evaluation.py
+@@ -73,8 +73,57 @@
+     return samples
+ 
+ 
+-def _overlaps(prediction: FindingRow, sample: GroundTruthSample) -> bool:
+-    if prediction.file.replace("\\", "/") != sample.file:
++def _dataset_target_prefix(review: ReviewRow, ground_truth_path: Path) -> str | None:
++    """Return the reviewed target's path relative to the dataset root when applicable.
++
++    Ground truth stores paths relative to ``dataset/``. Review findings store paths
++    relative to the review target. When a review targets ``dataset/vulnerable``,
++    ``V001_sql_injection.py`` therefore corresponds to
++    ``vulnerable/V001_sql_injection.py`` in ground truth.
++    """
++    dataset_root = ground_truth_path.parent.resolve()
++    target_root = Path(review.target_path).resolve()
++
++    try:
++        relative = target_root.relative_to(dataset_root)
++    except ValueError:
++        return None
++
++    return relative.as_posix() if relative.as_posix() != "." else ""
++
++
++def _samples_for_review(
++    samples: list[GroundTruthSample],
++    review: ReviewRow,
++    ground_truth_path: Path,
++) -> list[GroundTruthSample]:
++    """Limit ground-truth samples to the portion of the dataset being reviewed."""
++    prefix = _dataset_target_prefix(review, ground_truth_path)
++    if prefix is None:
++        return samples
++
++    if not prefix:
++        return samples
++
++    prefix_with_slash = f"{prefix}/"
++    return [sample for sample in samples if sample.file == prefix or sample.file.startswith(prefix_with_slash)]
++
++
++def _prediction_file_for_review(
++    prediction: FindingRow,
++    review: ReviewRow,
++    ground_truth_path: Path,
++) -> str:
++    """Map a finding's review-relative path into ground-truth dataset coordinates."""
++    prefix = _dataset_target_prefix(review, ground_truth_path)
++    file = prediction.file.replace("\\", "/")
++    if prefix:
++        return f"{prefix}/{file}"
++    return file
++
++
++def _overlaps(prediction_file: str, prediction: FindingRow, sample: GroundTruthSample) -> bool:
++    if prediction_file.replace("\\", "/") != sample.file:
+         return False
+     if prediction.category != sample.category:
+         return False
+@@ -147,7 +196,7 @@
+     ground_truth_path: Path,
+ ) -> EvaluationResult:
+     """Calculate actual metrics from persisted predictions and ground truth."""
+-    samples = load_ground_truth(ground_truth_path)
++    samples = _samples_for_review(load_ground_truth(ground_truth_path), review, ground_truth_path)
+     findings = session.scalars(
+         select(FindingRow)
+         .where(FindingRow.review_id == review.review_id)
+@@ -181,7 +230,11 @@
+     # Sample-level matching avoids counting duplicate agent findings as separate
+     # vulnerabilities. This is intentionally simple and reproducible.
+     for sample in samples:
+-        matched = [f for f in predictions if _overlaps(f, sample)]
++        matched = [
++            f
++            for f in predictions
++            if _overlaps(_prediction_file_for_review(f, review, ground_truth_path), f, sample)
++        ]
+         if sample.expected_vulnerable:
+             if matched:
+                 tp += 1
+--- a/backend/tests/test_evaluation.py
++++ b/backend/tests/test_evaluation.py
+@@ -147,3 +147,60 @@
+     assert result.false_negatives == 0
+     assert result.true_negatives == 1
+     assert result.evidence_completeness == 1.0
++
++
++
++def test_evaluation_resolves_review_relative_paths_within_dataset_scope(tmp_path):
++    from app.database import init_db, make_engine, make_session_factory
++
++    dataset = tmp_path / "dataset"
++    vulnerable = dataset / "vulnerable"
++    vulnerable.mkdir(parents=True)
++    ground_truth = dataset / "ground_truth.json"
++    ground_truth.write_text(
++        json.dumps(
++            {
++                "samples": [
++                    {
++                        "id": "V1",
++                        "file": "vulnerable/V1.py",
++                        "category": "sql_injection",
++                        "expected_vulnerable": True,
++                        "start_line": 5,
++                        "end_line": 5,
++                    },
++                    {
++                        "id": "S1",
++                        "file": "secure/S1.py",
++                        "category": "sql_injection",
++                        "expected_vulnerable": False,
++                    },
++                ]
++            }
++        ),
++        encoding="utf-8",
++    )
++
++    engine = make_engine(f"sqlite:///{tmp_path / 'd.db'}")
++    init_db(engine)
++    s = make_session_factory(engine)()
++    review = ReviewRow(
++        review_id="r1",
++        project_name="vulnerable-only",
++        language="python",
++        status="COMPLETED",
++        created_at=utcnow(),
++        target_path=str(vulnerable),
++    )
++    s.add(review)
++    s.add(_finding("f1", "V1.py", "sql_injection", 5))
++    s.commit()
++
++    result = evaluate_review(s, review, "single_llm", ground_truth)
++
++    assert result.true_positives == 1
++    assert result.false_positives == 0
++    assert result.false_negatives == 0
++    assert result.true_negatives == 0
++    assert result.matched_samples == 1
++    assert result.predictions == 1
+--- a/backend/app/api/reviews.py
++++ b/backend/app/api/reviews.py
+@@ -6,10 +6,11 @@
+ GET  /reviews/{id}/files         discovered source files and skip reasons
+ GET  /reviews/{id}/code-units    extracted code units
+ 
+-Status semantics for now: PENDING -> (process) -> RUNNING. The review stays RUNNING
+-after processing because the remaining pipeline stages (Checkpoints 2-6) are not
+-implemented; COMPLETED is reserved for a finished pipeline and FAILED is set if
+-processing errors out. Nothing here executes the reviewed source code.
++Status semantics: PENDING -> (process) -> RUNNING -> (decision) -> COMPLETED.
++The review remains RUNNING while Checkpoints 2-5 produce findings, evidence,
++static-analysis results, and decisions. COMPLETED is set after the deterministic
++decision stage succeeds; FAILED is set if code processing errors out.
++Nothing here executes the reviewed source code.
+ """
+ from __future__ import annotations
+ 
+@@ -297,7 +298,7 @@
+     if review.status not in ("RUNNING", "COMPLETED"):
+         raise HTTPException(
+             status_code=409,
+-            detail=f"Review is {review.status}; evaluation requires a RUNNING review",
++            detail=f"Review is {review.status}; evaluation requires a RUNNING or COMPLETED review",
+         )
+ 
+     ground_truth_path = Path(request.app.state.settings.repo_root) / "dataset" / "ground_truth.json"
+--- a/EVALUATION.md
++++ b/EVALUATION.md
+@@ -254,7 +254,10 @@
+ 
+ 1. vulnerability category must match;
+ 2. file path must match;
+-3. predicted and ground-truth source locations must overlap when a ground-truth location is defined.
++3. predicted and ground-truth source locations must overlap when a ground-truth location is defined;
++4. when a review targets a subdirectory of ``dataset/``, review-relative finding paths are
++   resolved into dataset-relative paths and only ground-truth samples inside that reviewed
++   target are included.
+ 
+ Multiple predictions matching the same ground-truth sample count once at the sample level. This prevents multiple agents describing the same vulnerability from artificially increasing the true-positive count.
+ 

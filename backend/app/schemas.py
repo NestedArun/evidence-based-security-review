@@ -117,6 +117,24 @@ class Decision(_Contract):
     remediation: str | None = None
 
 
+EvaluationMode = Literal["single_llm", "multi_agent", "proposed"]
+
+
+class EvaluationResult(_Contract):
+    review_id: str
+    mode: EvaluationMode
+    true_positives: int
+    false_positives: int
+    false_negatives: int
+    true_negatives: int
+    precision: float = Field(ge=0, le=1)
+    recall: float = Field(ge=0, le=1)
+    false_positive_rate: float = Field(ge=0, le=1)
+    evidence_completeness: float = Field(ge=0, le=1)
+    predictions: int = Field(ge=0)
+    matched_samples: int = Field(ge=0)
+
+
 # ------------------------------------------------------- code processing (no schema file)
 UnitType = Literal["function", "method", "class", "module"]
 

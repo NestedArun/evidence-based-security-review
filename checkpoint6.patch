@@ -1,0 +1,2021 @@
+--- a/EVALUATION.md
++++ b/EVALUATION.md
+@@ -1,211 +1,279 @@
+-# Evaluation Methodology
+-
+-## 1. Objective
+-
+-The evaluation measures whether evidence verification and independent static-analysis corroboration improve the reliability of AI-based security code review.
+-
+-The evaluation compares simpler AI review configurations against the proposed evidence-based architecture.
+-
+----
+-
+-## 2. Evaluation Configurations
+-
+-### Configuration A — Single LLM Baseline
+-
+-Workflow:
+-
+-Code
+-→ Single LLM
+-→ Findings
+-
+-This configuration does not use specialized multi-agent analysis, evidence verification, or Judge-based verification.
+-
+----
+-
+-### Configuration B — Multi-Agent Baseline
+-
+-Workflow:
+-
+-Code
+-→ Specialized Agents
+-→ Findings
+-
+-This configuration uses the specialized security analysis agents but does not apply the full evidence-verification and decision pipeline.
+-
+----
+-
+-### Configuration C — Proposed System
+-
+-Workflow:
+-
+-Code
+-→ Specialized Agents
+-→ Evidence Verification
+-→ Semgrep/Bandit
+-→ Finding Correlation
+-→ Judge
+-→ Final Findings
+-
+-This configuration represents the proposed research system.
+-
+----
+-
+-## 3. Implementation Requirement
+-
+-The three configurations should be implemented as selectable modes of the same application where practical.
+-
+-Separate applications are not required.
+-
+----
+-
+-## 4. Ground-Truth Dataset
+-
+-The initial evaluation dataset should contain manually verified Python security examples.
+-
+-The initial target is approximately:
+-
+-* 15–25 vulnerable samples
+-* 15–25 secure samples
+-
+-The dataset should cover the five initial vulnerability categories:
+-
+-1. SQL Injection
+-2. Command Injection
+-3. Hardcoded Secrets
+-4. Weak Cryptography
+-5. Authentication / Authorization
+-
+-The initial dataset is intentionally small and will be expanded after the core prototype is operational.
+-
+----
+-
+-## 5. Ground-Truth Integrity
+-
+-Ground-truth labels must be manually verified or explicitly approved by the researcher.
+-
+-The system must not automatically modify ground-truth labels.
+-
+-AI may assist with candidate dataset generation, but candidate examples must be reviewed before becoming ground truth.
+-
+----
+-
+-## 6. Primary Metrics
+-
+-The initial implementation will calculate:
+-
+-### Precision
+-
+-Precision measures the proportion of reported vulnerabilities that are correct.
+-
+-Precision = TP / (TP + FP)
+-
+----
+-
+-### Recall
+-
+-Recall measures the proportion of actual vulnerabilities that were detected.
+-
+-Recall = TP / (TP + FN)
+-
+----
+-
+-### False Positive Rate
+-
+-False Positive Rate measures the proportion of actual negative cases incorrectly reported as vulnerabilities.
+-
+-FPR = FP / (FP + TN)
+-
+----
+-
+-### Evidence Completeness
+-
+-Evidence completeness measures how many expected evidence elements were successfully established for a finding.
+-
+-Initial evidence elements:
+-
+-* Source
+-* Sink
+-* Data flow
+-* Security control
+-* Static-analysis corroboration
+-
+-Evidence completeness should be calculated from the applicable evidence elements for each finding.
+-
+----
+-
+-## 7. Finding Matching
+-
+-A predicted finding should be matched against ground truth primarily using:
+-
+-* Vulnerability category
+-* Source-code file
+-* Overlapping source-code location
+-
+-The initial implementation should avoid complex semantic matching.
+-
+----
+-
+-## 8. Confusion Matrix
+-
+-The evaluation system should record:
+-
+-* True Positives
+-* False Positives
+-* False Negatives
+-* True Negatives
+-
+-These values should be retained so that additional metrics can be calculated later.
+-
+----
+-
+-## 9. Secondary Metrics
+-
+-The following metrics are part of the broader research evaluation but are not mandatory for the first 75% prototype:
+-
+-* Confidence calibration
+-* Review time
+-* Additional statistical analysis
+-
+-These should be added after the core evaluation pipeline is operational.
+-
+----
+-
+-## 10. Experimental Comparison
+-
+-The primary comparison is:
+-
+-Single LLM
+-vs.
+-Multi-Agent
+-vs.
+-Proposed Evidence-Based System
+-
+-The objective is to determine whether the proposed verification architecture improves reliability, particularly by reducing false positives while maintaining or improving recall.
+-
+----
+-
+-## 11. No Fabricated Results
+-
+-The evaluation system must never generate or hard-code experimental performance values.
+-
+-All reported metrics must be calculated from actual system outputs and ground-truth data.
+-
+-Placeholder values may be displayed during development but must be clearly identified as placeholders and must never be presented as experimental results.
+-
+----
+-
+-## 12. Initial Two-Day Target
+-
+-The immediate objective is to implement a functional evaluation pipeline rather than a statistically comprehensive research study.
+-
+-The first prototype should be capable of:
+-
+-1. Running the three review configurations.
+-2. Comparing predictions against ground truth.
+-3. Calculating precision.
+-4. Calculating recall.
+-5. Calculating false-positive rate.
+-6. Calculating evidence completeness.
+-7. Producing a comparison table.
+-
+-Dataset expansion, confidence calibration, review-time analysis, and deeper statistical analysis will be performed during the subsequent research period.
++# Evaluation Methodology
++
++## 1. Objective
++
++The evaluation measures whether evidence verification and independent static-analysis corroboration improve the reliability of AI-based security code review.
++
++The evaluation compares simpler AI review configurations against the proposed evidence-based architecture.
++
++---
++
++## 2. Evaluation Configurations
++
++### Configuration A — Single LLM Baseline
++
++Workflow:
++
++Code
++→ Single LLM
++→ Findings
++
++This configuration does not use specialized multi-agent analysis, evidence verification, or Judge-based verification.
++
++---
++
++### Configuration B — Multi-Agent Baseline
++
++Workflow:
++
++Code
++→ Specialized Agents
++→ Findings
++
++This configuration uses the specialized security analysis agents but does not apply the full evidence-verification and decision pipeline.
++
++---
++
++### Configuration C — Proposed System
++
++Workflow:
++
++Code
++→ Specialized Agents
++→ Evidence Verification
++→ Semgrep/Bandit
++→ Finding Correlation
++→ Judge
++→ Final Findings
++
++This configuration represents the proposed research system.
++
++---
++
++## 3. Implementation Requirement
++
++The three configurations should be implemented as selectable modes of the same application where practical.
++
++Separate applications are not required.
++
++---
++
++## 4. Ground-Truth Dataset
++
++The initial evaluation dataset should contain manually verified Python security examples.
++
++The initial target is approximately:
++
++* 15–25 vulnerable samples
++* 15–25 secure samples
++
++The dataset should cover the five initial vulnerability categories:
++
++1. SQL Injection
++2. Command Injection
++3. Hardcoded Secrets
++4. Weak Cryptography
++5. Authentication / Authorization
++
++The initial dataset is intentionally small and will be expanded after the core prototype is operational.
++
++---
++
++## 5. Ground-Truth Integrity
++
++Ground-truth labels must be manually verified or explicitly approved by the researcher.
++
++The system must not automatically modify ground-truth labels.
++
++AI may assist with candidate dataset generation, but candidate examples must be reviewed before becoming ground truth.
++
++---
++
++## 6. Primary Metrics
++
++The initial implementation will calculate:
++
++### Precision
++
++Precision measures the proportion of reported vulnerabilities that are correct.
++
++Precision = TP / (TP + FP)
++
++---
++
++### Recall
++
++Recall measures the proportion of actual vulnerabilities that were detected.
++
++Recall = TP / (TP + FN)
++
++---
++
++### False Positive Rate
++
++False Positive Rate measures the proportion of actual negative cases incorrectly reported as vulnerabilities.
++
++FPR = FP / (FP + TN)
++
++---
++
++### Evidence Completeness
++
++Evidence completeness measures how many expected evidence elements were successfully established for a finding.
++
++Initial evidence elements:
++
++* Source
++* Sink
++* Data flow
++* Security control
++* Static-analysis corroboration
++
++Evidence completeness should be calculated from the applicable evidence elements for each finding.
++
++---
++
++## 7. Finding Matching
++
++A predicted finding should be matched against ground truth primarily using:
++
++* Vulnerability category
++* Source-code file
++* Overlapping source-code location
++
++The initial implementation should avoid complex semantic matching.
++
++---
++
++## 8. Confusion Matrix
++
++The evaluation system should record:
++
++* True Positives
++* False Positives
++* False Negatives
++* True Negatives
++
++These values should be retained so that additional metrics can be calculated later.
++
++---
++
++## 9. Secondary Metrics
++
++The following metrics are part of the broader research evaluation but are not mandatory for the first 75% prototype:
++
++* Confidence calibration
++* Review time
++* Additional statistical analysis
++
++These should be added after the core evaluation pipeline is operational.
++
++---
++
++## 10. Experimental Comparison
++
++The primary comparison is:
++
++Single LLM
++vs.
++Multi-Agent
++vs.
++Proposed Evidence-Based System
++
++The objective is to determine whether the proposed verification architecture improves reliability, particularly by reducing false positives while maintaining or improving recall.
++
++---
++
++## 11. No Fabricated Results
++
++The evaluation system must never generate or hard-code experimental performance values.
++
++All reported metrics must be calculated from actual system outputs and ground-truth data.
++
++Placeholder values may be displayed during development but must be clearly identified as placeholders and must never be presented as experimental results.
++
++---
++
++## 12. Initial Two-Day Target
++
++The immediate objective is to implement a functional evaluation pipeline rather than a statistically comprehensive research study.
++
++The first prototype should be capable of:
++
++1. Running the three review configurations.
++2. Comparing predictions against ground truth.
++3. Calculating precision.
++4. Calculating recall.
++5. Calculating false-positive rate.
++6. Calculating evidence completeness.
++7. Producing a comparison table.
++
++Dataset expansion, confidence calibration, review-time analysis, and deeper statistical analysis will be performed during the subsequent research period.
++
++
++## 13. Implemented Evaluation Pipeline
++
++Checkpoint 6 provides a local evaluation API over persisted review results.
++
++The selectable modes are:
++
++* `single_llm` — predictions produced by the broad `security_review` agent.
++* `multi_agent` — predictions from all specialized agents.
++* `proposed` — findings that received a `VERIFIED` Judge decision.
++
++For the current prototype these modes are evaluated as views over the same persisted review run. This keeps the comparison reproducible and avoids requiring three separate project copies. A future experiment can execute the modes as independent runs when stricter experimental isolation is required.
++
++### Evaluation Endpoint
++
++```text
++POST /reviews/{review_id}/evaluation?mode=single_llm
++POST /reviews/{review_id}/evaluation?mode=multi_agent
++POST /reviews/{review_id}/evaluation?mode=proposed
++
++GET /reviews/{review_id}/evaluation
++```
++
++Each evaluation result records:
++
++* True Positives
++* False Positives
++* False Negatives
++* True Negatives
++* Precision
++* Recall
++* False Positive Rate
++* Evidence Completeness
++* Number of predictions
++* Number of matched ground-truth samples
++
++Evaluation runs are persisted in SQLite so that experimental results are not merely transient API output.
++
++### Matching Rule
++
++Matching is intentionally simple:
++
++1. vulnerability category must match;
++2. file path must match;
++3. predicted and ground-truth source locations must overlap when a ground-truth location is defined.
++
++Multiple predictions matching the same ground-truth sample count once at the sample level. This prevents multiple agents describing the same vulnerability from artificially increasing the true-positive count.
++
++### Evidence Completeness
++
++The implemented score checks five evidence elements:
++
++1. source evidence record;
++2. sink evidence record;
++3. data-flow evidence record;
++4. security-control evidence record;
++5. matched static-analysis corroboration.
++
++The metric is the average fraction of these elements established across predicted findings.
++
++A `security_control` record with `present=false` still counts as established evidence because it records an independently verified absence of the relevant control.
++
++### Ground-Truth Isolation
++
++`dataset/ground_truth.json` is loaded only by the evaluation component. It is not passed to the AI agents or evidence-verification code.
++
++Ground-truth files and labels therefore remain outside the prediction path.
+--- a/backend/app/api/reviews.py
++++ b/backend/app/api/reviews.py
+@@ -1,281 +1,341 @@
+-"""Basic review API (Checkpoint 1).
+-
+-POST /reviews                    create a review for a local project directory
+-GET  /reviews, /reviews/{id}     list / read reviews (Review schema)
+-POST /reviews/{id}/process       run Code Processing for the review
+-GET  /reviews/{id}/files         discovered source files and skip reasons
+-GET  /reviews/{id}/code-units    extracted code units
+-
+-Status semantics for now: PENDING -> (process) -> RUNNING. The review stays RUNNING
+-after processing because the remaining pipeline stages (Checkpoints 2-6) are not
+-implemented; COMPLETED is reserved for a finished pipeline and FAILED is set if
+-processing errors out. Nothing here executes the reviewed source code.
+-"""
+-from __future__ import annotations
+-
+-import uuid
+-from pathlib import Path
+-
+-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+-from sqlalchemy import select
+-from sqlalchemy.orm import Session
+-
+-from app.models import CodeUnitRow, FindingRow, ReviewRow, SourceFileRow, utcnow
+-from app.processing.service import process_review
+-from app.processing.ai import run_ai_review
+-from app.processing.evidence import run_evidence_verification
+-from app.processing.static_analysis import run_static_analysis
+-from app.processing.decision import run_decision_review
+-from app.schemas import (
+-    CodeUnit,
+-    ProcessingSummary,
+-    Review,
+-    ReviewCreate,
+-    SourceFileOut,
+-    AIProcessingSummary,
+-    FindingOut,
+-    Evidence,
+-    EvidenceProcessingSummary,
+-    StaticAnalysisResult,
+-    Decision,
+-)
+-
+-router = APIRouter(prefix="/reviews", tags=["reviews"])
+-
+-
+-def get_db(request: Request):
+-    session: Session = request.app.state.session_factory()
+-    try:
+-        yield session
+-    finally:
+-        session.close()
+-
+-
+-def _get_review_or_404(db: Session, review_id: str) -> ReviewRow:
+-    review = db.get(ReviewRow, review_id)
+-    if review is None:
+-        raise HTTPException(status_code=404, detail=f"Review not found: {review_id}")
+-    return review
+-
+-
+-@router.post("", response_model=Review, status_code=201)
+-def create_review(body: ReviewCreate, request: Request, db: Session = Depends(get_db)):
+-    target = Path(body.project_path).expanduser()
+-    if not target.is_dir():
+-        raise HTTPException(status_code=400, detail=f"project_path is not a directory: {body.project_path}")
+-
+-    config = request.app.state.project_config
+-    review = ReviewRow(
+-        review_id=str(uuid.uuid4()),
+-        project_name=body.project_name,
+-        language=config.analysis.language,
+-        status="PENDING",
+-        created_at=utcnow(),
+-        target_path=str(target.resolve()),
+-    )
+-    db.add(review)
+-    db.commit()
+-    return Review.model_validate(review)
+-
+-
+-@router.get("", response_model=list[Review])
+-def list_reviews(db: Session = Depends(get_db)):
+-    rows = db.scalars(select(ReviewRow).order_by(ReviewRow.created_at, ReviewRow.review_id)).all()
+-    return [Review.model_validate(r) for r in rows]
+-
+-
+-@router.get("/{review_id}", response_model=Review)
+-def get_review(review_id: str, db: Session = Depends(get_db)):
+-    return Review.model_validate(_get_review_or_404(db, review_id))
+-
+-
+-@router.post("/{review_id}/process", response_model=ProcessingSummary)
+-def process(review_id: str, request: Request, db: Session = Depends(get_db)):
+-    review = _get_review_or_404(db, review_id)
+-    if review.status not in ("PENDING", "FAILED"):
+-        raise HTTPException(
+-            status_code=409,
+-            detail=f"Review is {review.status}; processing is only allowed for PENDING or FAILED reviews",
+-        )
+-
+-    review.status = "RUNNING"
+-    review.error_message = None
+-    db.commit()
+-
+-    try:
+-        summary = process_review(db, review, request.app.state.settings)
+-        db.commit()
+-    except Exception as exc:  # report the real error; never mark success silently
+-        db.rollback()
+-        review = _get_review_or_404(db, review_id)
+-        review.status = "FAILED"
+-        review.error_message = f"{type(exc).__name__}: {exc}"
+-        db.commit()
+-        raise HTTPException(status_code=500, detail=f"Code processing failed: {review.error_message}")
+-    return summary
+-
+-
+-@router.get("/{review_id}/files", response_model=list[SourceFileOut])
+-def list_files(review_id: str, db: Session = Depends(get_db)):
+-    _get_review_or_404(db, review_id)
+-    rows = db.scalars(
+-        select(SourceFileRow).where(SourceFileRow.review_id == review_id).order_by(SourceFileRow.path)
+-    ).all()
+-    return [SourceFileOut.model_validate(r) for r in rows]
+-
+-
+-@router.get("/{review_id}/code-units", response_model=list[CodeUnit])
+-def list_code_units(
+-    review_id: str,
+-    file: str | None = Query(default=None, description="Filter by relative file path"),
+-    db: Session = Depends(get_db),
+-):
+-    _get_review_or_404(db, review_id)
+-    stmt = select(CodeUnitRow).where(CodeUnitRow.review_id == review_id)
+-    if file is not None:
+-        stmt = stmt.where(CodeUnitRow.file == file)
+-    rows = db.scalars(stmt.order_by(CodeUnitRow.file, CodeUnitRow.start_line, CodeUnitRow.chunk_index)).all()
+-    return [CodeUnit.model_validate(r) for r in rows]
+-
+-
+-@router.post("/{review_id}/ai-review", response_model=AIProcessingSummary)
+-def ai_review(review_id: str, request: Request, db: Session = Depends(get_db)):
+-    """Run the four Checkpoint-2 agents over persisted code units.
+-
+-    Findings are hypotheses only. No evidence or final decision is created here.
+-    """
+-    review = _get_review_or_404(db, review_id)
+-    if review.status != "RUNNING":
+-        raise HTTPException(
+-            status_code=409,
+-            detail=f"Review is {review.status}; AI review requires a processed RUNNING review",
+-        )
+-    try:
+-        findings = run_ai_review(db, review, request.app.state.project_config)
+-        db.commit()
+-    except Exception as exc:
+-        db.rollback()
+-        raise HTTPException(status_code=502, detail=f"AI review failed: {type(exc).__name__}: {exc}") from exc
+-
+-    return AIProcessingSummary(
+-        review_id=review.review_id,
+-        agents=["security_review", "owasp_cwe", "crypto", "auth"],
+-        code_units=db.query(CodeUnitRow).filter(CodeUnitRow.review_id == review_id).count(),
+-        findings=len(findings),
+-        status=review.status,
+-    )
+-
+-
+-@router.post("/{review_id}/evidence", response_model=EvidenceProcessingSummary)
+-def evidence_review(review_id: str, db: Session = Depends(get_db)):
+-    """Independently verify persisted candidate findings against source code.
+-
+-    This checkpoint creates evidence only; it does not create a final decision.
+-    """
+-    review = _get_review_or_404(db, review_id)
+-    if review.status != "RUNNING":
+-        raise HTTPException(
+-            status_code=409,
+-            detail=f"Review is {review.status}; evidence verification requires a RUNNING review",
+-        )
+-    try:
+-        evidence = run_evidence_verification(db, review)
+-        db.commit()
+-    except Exception as exc:
+-        db.rollback()
+-        raise HTTPException(
+-            status_code=500,
+-            detail=f"Evidence verification failed: {type(exc).__name__}: {exc}",
+-        ) from exc
+-
+-    return EvidenceProcessingSummary(
+-        review_id=review.review_id,
+-        findings=len(evidence),
+-        evidence_created=len(evidence),
+-        status=review.status,
+-    )
+-
+-
+-@router.get("/{review_id}/evidence", response_model=list[Evidence])
+-def list_evidence(review_id: str, db: Session = Depends(get_db)):
+-    _get_review_or_404(db, review_id)
+-    from app.models import EvidenceRow
+-    rows = db.scalars(
+-        select(EvidenceRow)
+-        .join(FindingRow, EvidenceRow.finding_id == FindingRow.finding_id)
+-        .where(FindingRow.review_id == review_id)
+-        .order_by(EvidenceRow.evidence_id)
+-    ).all()
+-    return [Evidence.model_validate(r) for r in rows]
+-
+-
+-@router.post("/{review_id}/static-analysis", response_model=list[StaticAnalysisResult])
+-def static_analysis(review_id: str, request: Request, db: Session = Depends(get_db)):
+-    """Run independent Windows-native static analyzers; no final decision is made."""
+-    review = _get_review_or_404(db, review_id)
+-    if review.status != "RUNNING":
+-        raise HTTPException(status_code=409, detail=f"Review is {review.status}; static analysis requires a RUNNING review")
+-    try:
+-        rows = run_static_analysis(db, review, request.app.state.project_config)
+-        db.commit()
+-    except Exception as exc:
+-        db.rollback()
+-        raise HTTPException(status_code=500, detail=f"Static analysis failed: {type(exc).__name__}: {exc}") from exc
+-    return [StaticAnalysisResult.model_validate(row) for row in rows]
+-
+-
+-@router.get("/{review_id}/static-analysis", response_model=list[StaticAnalysisResult])
+-def list_static_analysis(review_id: str, db: Session = Depends(get_db)):
+-    _get_review_or_404(db, review_id)
+-    from app.models import StaticResultRow
+-    rows = db.scalars(
+-        select(StaticResultRow)
+-        .join(FindingRow, StaticResultRow.finding_id == FindingRow.finding_id, isouter=True)
+-        .where((FindingRow.review_id == review_id) | (StaticResultRow.finding_id.is_(None)))
+-        .order_by(StaticResultRow.tool, StaticResultRow.file, StaticResultRow.start_line, StaticResultRow.result_id)
+-    ).all()
+-    return [StaticAnalysisResult.model_validate(row) for row in rows]
+-
+-
+-@router.get("/{review_id}/findings", response_model=list[FindingOut])
+-def list_findings(review_id: str, db: Session = Depends(get_db)):
+-    _get_review_or_404(db, review_id)
+-    from app.models import FindingRow
+-    rows = db.scalars(
+-        select(FindingRow)
+-        .where(FindingRow.review_id == review_id)
+-        .order_by(FindingRow.file, FindingRow.start_line, FindingRow.agent, FindingRow.finding_id)
+-    ).all()
+-    return [FindingOut.model_validate(r) for r in rows]
+-
+-@router.post("/{review_id}/decision", response_model=list[Decision])
+-def decision_review(review_id: str, db: Session = Depends(get_db)):
+-    """Run Checkpoint 5 deterministic evidence-based decisions."""
+-    review = _get_review_or_404(db, review_id)
+-    if review.status != "RUNNING":
+-        raise HTTPException(
+-            status_code=409,
+-            detail=f"Review is {review.status}; decision requires a RUNNING review",
+-        )
+-    try:
+-        decisions = run_decision_review(db, review)
+-        db.commit()
+-    except Exception as exc:
+-        db.rollback()
+-        raise HTTPException(status_code=500, detail=f"Decision stage failed: {type(exc).__name__}: {exc}")
+-    return decisions
+-
+-
+-@router.get("/{review_id}/decisions", response_model=list[Decision])
+-def list_decisions(review_id: str, db: Session = Depends(get_db)):
+-    """Return persisted Checkpoint 5 decisions for a review."""
+-    _get_review_or_404(db, review_id)
+-    from app.models import DecisionRow
+-    rows = db.scalars(
+-        select(DecisionRow)
+-        .join(FindingRow, DecisionRow.finding_id == FindingRow.finding_id)
+-        .where(FindingRow.review_id == review_id)
+-        .order_by(FindingRow.file, FindingRow.start_line, DecisionRow.decision_id)
+-    ).all()
+-    return [Decision.model_validate(row) for row in rows]
+-
++"""Basic review API (Checkpoint 1).
++
++POST /reviews                    create a review for a local project directory
++GET  /reviews, /reviews/{id}     list / read reviews (Review schema)
++POST /reviews/{id}/process       run Code Processing for the review
++GET  /reviews/{id}/files         discovered source files and skip reasons
++GET  /reviews/{id}/code-units    extracted code units
++
++Status semantics for now: PENDING -> (process) -> RUNNING. The review stays RUNNING
++after processing because the remaining pipeline stages (Checkpoints 2-6) are not
++implemented; COMPLETED is reserved for a finished pipeline and FAILED is set if
++processing errors out. Nothing here executes the reviewed source code.
++"""
++from __future__ import annotations
++
++import uuid
++from pathlib import Path
++
++from fastapi import APIRouter, Depends, HTTPException, Query, Request
++from sqlalchemy import select
++from sqlalchemy.orm import Session
++
++from app.models import CodeUnitRow, FindingRow, ReviewRow, SourceFileRow, EvaluationRunRow, utcnow
++from app.processing.service import process_review
++from app.processing.ai import run_ai_review
++from app.processing.evidence import run_evidence_verification
++from app.processing.static_analysis import run_static_analysis
++from app.processing.decision import run_decision_review
++from app.processing.evaluation import evaluate_review
++from app.schemas import (
++    CodeUnit,
++    ProcessingSummary,
++    Review,
++    ReviewCreate,
++    SourceFileOut,
++    AIProcessingSummary,
++    FindingOut,
++    Evidence,
++    EvidenceProcessingSummary,
++    StaticAnalysisResult,
++    Decision,
++    EvaluationResult,
++    EvaluationMode,
++)
++
++router = APIRouter(prefix="/reviews", tags=["reviews"])
++
++
++def get_db(request: Request):
++    session: Session = request.app.state.session_factory()
++    try:
++        yield session
++    finally:
++        session.close()
++
++
++def _get_review_or_404(db: Session, review_id: str) -> ReviewRow:
++    review = db.get(ReviewRow, review_id)
++    if review is None:
++        raise HTTPException(status_code=404, detail=f"Review not found: {review_id}")
++    return review
++
++
++@router.post("", response_model=Review, status_code=201)
++def create_review(body: ReviewCreate, request: Request, db: Session = Depends(get_db)):
++    target = Path(body.project_path).expanduser()
++    if not target.is_dir():
++        raise HTTPException(status_code=400, detail=f"project_path is not a directory: {body.project_path}")
++
++    config = request.app.state.project_config
++    review = ReviewRow(
++        review_id=str(uuid.uuid4()),
++        project_name=body.project_name,
++        language=config.analysis.language,
++        status="PENDING",
++        created_at=utcnow(),
++        target_path=str(target.resolve()),
++    )
++    db.add(review)
++    db.commit()
++    return Review.model_validate(review)
++
++
++@router.get("", response_model=list[Review])
++def list_reviews(db: Session = Depends(get_db)):
++    rows = db.scalars(select(ReviewRow).order_by(ReviewRow.created_at, ReviewRow.review_id)).all()
++    return [Review.model_validate(r) for r in rows]
++
++
++@router.get("/{review_id}", response_model=Review)
++def get_review(review_id: str, db: Session = Depends(get_db)):
++    return Review.model_validate(_get_review_or_404(db, review_id))
++
++
++@router.post("/{review_id}/process", response_model=ProcessingSummary)
++def process(review_id: str, request: Request, db: Session = Depends(get_db)):
++    review = _get_review_or_404(db, review_id)
++    if review.status not in ("PENDING", "FAILED"):
++        raise HTTPException(
++            status_code=409,
++            detail=f"Review is {review.status}; processing is only allowed for PENDING or FAILED reviews",
++        )
++
++    review.status = "RUNNING"
++    review.error_message = None
++    db.commit()
++
++    try:
++        summary = process_review(db, review, request.app.state.settings)
++        db.commit()
++    except Exception as exc:  # report the real error; never mark success silently
++        db.rollback()
++        review = _get_review_or_404(db, review_id)
++        review.status = "FAILED"
++        review.error_message = f"{type(exc).__name__}: {exc}"
++        db.commit()
++        raise HTTPException(status_code=500, detail=f"Code processing failed: {review.error_message}")
++    return summary
++
++
++@router.get("/{review_id}/files", response_model=list[SourceFileOut])
++def list_files(review_id: str, db: Session = Depends(get_db)):
++    _get_review_or_404(db, review_id)
++    rows = db.scalars(
++        select(SourceFileRow).where(SourceFileRow.review_id == review_id).order_by(SourceFileRow.path)
++    ).all()
++    return [SourceFileOut.model_validate(r) for r in rows]
++
++
++@router.get("/{review_id}/code-units", response_model=list[CodeUnit])
++def list_code_units(
++    review_id: str,
++    file: str | None = Query(default=None, description="Filter by relative file path"),
++    db: Session = Depends(get_db),
++):
++    _get_review_or_404(db, review_id)
++    stmt = select(CodeUnitRow).where(CodeUnitRow.review_id == review_id)
++    if file is not None:
++        stmt = stmt.where(CodeUnitRow.file == file)
++    rows = db.scalars(stmt.order_by(CodeUnitRow.file, CodeUnitRow.start_line, CodeUnitRow.chunk_index)).all()
++    return [CodeUnit.model_validate(r) for r in rows]
++
++
++@router.post("/{review_id}/ai-review", response_model=AIProcessingSummary)
++def ai_review(review_id: str, request: Request, db: Session = Depends(get_db)):
++    """Run the four Checkpoint-2 agents over persisted code units.
++
++    Findings are hypotheses only. No evidence or final decision is created here.
++    """
++    review = _get_review_or_404(db, review_id)
++    if review.status != "RUNNING":
++        raise HTTPException(
++            status_code=409,
++            detail=f"Review is {review.status}; AI review requires a processed RUNNING review",
++        )
++    try:
++        findings = run_ai_review(db, review, request.app.state.project_config)
++        db.commit()
++    except Exception as exc:
++        db.rollback()
++        raise HTTPException(status_code=502, detail=f"AI review failed: {type(exc).__name__}: {exc}") from exc
++
++    return AIProcessingSummary(
++        review_id=review.review_id,
++        agents=["security_review", "owasp_cwe", "crypto", "auth"],
++        code_units=db.query(CodeUnitRow).filter(CodeUnitRow.review_id == review_id).count(),
++        findings=len(findings),
++        status=review.status,
++    )
++
++
++@router.post("/{review_id}/evidence", response_model=EvidenceProcessingSummary)
++def evidence_review(review_id: str, db: Session = Depends(get_db)):
++    """Independently verify persisted candidate findings against source code.
++
++    This checkpoint creates evidence only; it does not create a final decision.
++    """
++    review = _get_review_or_404(db, review_id)
++    if review.status != "RUNNING":
++        raise HTTPException(
++            status_code=409,
++            detail=f"Review is {review.status}; evidence verification requires a RUNNING review",
++        )
++    try:
++        evidence = run_evidence_verification(db, review)
++        db.commit()
++    except Exception as exc:
++        db.rollback()
++        raise HTTPException(
++            status_code=500,
++            detail=f"Evidence verification failed: {type(exc).__name__}: {exc}",
++        ) from exc
++
++    return EvidenceProcessingSummary(
++        review_id=review.review_id,
++        findings=len(evidence),
++        evidence_created=len(evidence),
++        status=review.status,
++    )
++
++
++@router.get("/{review_id}/evidence", response_model=list[Evidence])
++def list_evidence(review_id: str, db: Session = Depends(get_db)):
++    _get_review_or_404(db, review_id)
++    from app.models import EvidenceRow
++    rows = db.scalars(
++        select(EvidenceRow)
++        .join(FindingRow, EvidenceRow.finding_id == FindingRow.finding_id)
++        .where(FindingRow.review_id == review_id)
++        .order_by(EvidenceRow.evidence_id)
++    ).all()
++    return [Evidence.model_validate(r) for r in rows]
++
++
++@router.post("/{review_id}/static-analysis", response_model=list[StaticAnalysisResult])
++def static_analysis(review_id: str, request: Request, db: Session = Depends(get_db)):
++    """Run independent Windows-native static analyzers; no final decision is made."""
++    review = _get_review_or_404(db, review_id)
++    if review.status != "RUNNING":
++        raise HTTPException(status_code=409, detail=f"Review is {review.status}; static analysis requires a RUNNING review")
++    try:
++        rows = run_static_analysis(db, review, request.app.state.project_config)
++        db.commit()
++    except Exception as exc:
++        db.rollback()
++        raise HTTPException(status_code=500, detail=f"Static analysis failed: {type(exc).__name__}: {exc}") from exc
++    return [StaticAnalysisResult.model_validate(row) for row in rows]
++
++
++@router.get("/{review_id}/static-analysis", response_model=list[StaticAnalysisResult])
++def list_static_analysis(review_id: str, db: Session = Depends(get_db)):
++    _get_review_or_404(db, review_id)
++    from app.models import StaticResultRow
++    rows = db.scalars(
++        select(StaticResultRow)
++        .join(FindingRow, StaticResultRow.finding_id == FindingRow.finding_id, isouter=True)
++        .where((FindingRow.review_id == review_id) | (StaticResultRow.finding_id.is_(None)))
++        .order_by(StaticResultRow.tool, StaticResultRow.file, StaticResultRow.start_line, StaticResultRow.result_id)
++    ).all()
++    return [StaticAnalysisResult.model_validate(row) for row in rows]
++
++
++@router.get("/{review_id}/findings", response_model=list[FindingOut])
++def list_findings(review_id: str, db: Session = Depends(get_db)):
++    _get_review_or_404(db, review_id)
++    from app.models import FindingRow
++    rows = db.scalars(
++        select(FindingRow)
++        .where(FindingRow.review_id == review_id)
++        .order_by(FindingRow.file, FindingRow.start_line, FindingRow.agent, FindingRow.finding_id)
++    ).all()
++    return [FindingOut.model_validate(r) for r in rows]
++
++@router.post("/{review_id}/decision", response_model=list[Decision])
++def decision_review(review_id: str, db: Session = Depends(get_db)):
++    """Run Checkpoint 5 deterministic evidence-based decisions."""
++    review = _get_review_or_404(db, review_id)
++    if review.status != "RUNNING":
++        raise HTTPException(
++            status_code=409,
++            detail=f"Review is {review.status}; decision requires a RUNNING review",
++        )
++    try:
++        decisions = run_decision_review(db, review)
++        db.commit()
++    except Exception as exc:
++        db.rollback()
++        raise HTTPException(status_code=500, detail=f"Decision stage failed: {type(exc).__name__}: {exc}")
++    return decisions
++
++
++@router.get("/{review_id}/decisions", response_model=list[Decision])
++def list_decisions(review_id: str, db: Session = Depends(get_db)):
++    """Return persisted Checkpoint 5 decisions for a review."""
++    _get_review_or_404(db, review_id)
++    from app.models import DecisionRow
++    rows = db.scalars(
++        select(DecisionRow)
++        .join(FindingRow, DecisionRow.finding_id == FindingRow.finding_id)
++        .where(FindingRow.review_id == review_id)
++        .order_by(FindingRow.file, FindingRow.start_line, DecisionRow.decision_id)
++    ).all()
++    return [Decision.model_validate(row) for row in rows]
++
++
++
++@router.post("/{review_id}/evaluation", response_model=EvaluationResult)
++def evaluate(
++    review_id: str,
++    request: Request,
++    mode: EvaluationMode = Query(default="proposed"),
++    db: Session = Depends(get_db),
++):
++    """Calculate Checkpoint 6 metrics from persisted predictions and ground truth."""
++    review = _get_review_or_404(db, review_id)
++    if review.status != "RUNNING":
++        raise HTTPException(
++            status_code=409,
++            detail=f"Review is {review.status}; evaluation requires a RUNNING review",
++        )
++
++    ground_truth_path = Path(request.app.state.settings.repo_root) / "dataset" / "ground_truth.json"
++    if not ground_truth_path.is_file():
++        raise HTTPException(status_code=500, detail=f"Ground-truth file not found: {ground_truth_path}")
++
++    try:
++        result = evaluate_review(db, review, mode, ground_truth_path)
++        db.add(
++            EvaluationRunRow(
++                evaluation_id=uuid.uuid4().hex,
++                review_id=review.review_id,
++                mode=result.mode,
++                true_positives=result.true_positives,
++                false_positives=result.false_positives,
++                false_negatives=result.false_negatives,
++                true_negatives=result.true_negatives,
++                precision=result.precision,
++                recall=result.recall,
++                false_positive_rate=result.false_positive_rate,
++                evidence_completeness=result.evidence_completeness,
++                predictions=result.predictions,
++                matched_samples=result.matched_samples,
++            )
++        )
++        db.commit()
++    except Exception as exc:
++        db.rollback()
++        raise HTTPException(status_code=500, detail=f"Evaluation failed: {type(exc).__name__}: {exc}") from exc
++    return result
++
++
++@router.get("/{review_id}/evaluation", response_model=list[EvaluationResult])
++def list_evaluations(review_id: str, db: Session = Depends(get_db)):
++    """Return persisted Checkpoint 6 evaluation runs for a review."""
++    _get_review_or_404(db, review_id)
++    rows = db.scalars(
++        select(EvaluationRunRow)
++        .where(EvaluationRunRow.review_id == review_id)
++        .order_by(EvaluationRunRow.created_at, EvaluationRunRow.evaluation_id)
++    ).all()
++    return [EvaluationResult.model_validate(row) for row in rows]
+--- a/backend/app/models.py
++++ b/backend/app/models.py
+@@ -166,3 +166,25 @@
+     reason: Mapped[str] = mapped_column(Text, nullable=False)
+     remediation: Mapped[str | None] = mapped_column(Text, nullable=True)
+     _parent: Mapped["FindingRow"] = relationship(lazy="raise")  # insert-ordering only
++
++
++class EvaluationRunRow(Base):
++    __tablename__ = "evaluation_runs"
++
++    evaluation_id: Mapped[str] = mapped_column(String, primary_key=True)
++    review_id: Mapped[str] = mapped_column(
++        ForeignKey("reviews.review_id", ondelete="CASCADE"), index=True, nullable=False
++    )
++    mode: Mapped[str] = mapped_column(String, nullable=False)
++    true_positives: Mapped[int] = mapped_column(Integer, nullable=False)
++    false_positives: Mapped[int] = mapped_column(Integer, nullable=False)
++    false_negatives: Mapped[int] = mapped_column(Integer, nullable=False)
++    true_negatives: Mapped[int] = mapped_column(Integer, nullable=False)
++    precision: Mapped[float] = mapped_column(Float, nullable=False)
++    recall: Mapped[float] = mapped_column(Float, nullable=False)
++    false_positive_rate: Mapped[float] = mapped_column(Float, nullable=False)
++    evidence_completeness: Mapped[float] = mapped_column(Float, nullable=False)
++    predictions: Mapped[int] = mapped_column(Integer, nullable=False)
++    matched_samples: Mapped[int] = mapped_column(Integer, nullable=False)
++    created_at: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False, default=utcnow)
++    _parent: Mapped["ReviewRow"] = relationship(lazy="raise")
+--- /dev/null
++++ b/backend/app/processing/evaluation.py
+@@ -0,0 +1,209 @@
++"""Checkpoint 6: reproducible evaluation against manually verified ground truth.
++
++Evaluation is deliberately downstream of prediction. Ground-truth labels are loaded
++only by this module and are never passed to the review agents.
++
++The three selectable configurations are represented as prediction views over the
++same persisted review run:
++- single_llm: the broad security_review agent only
++- multi_agent: findings from all specialized agents
++- proposed: findings whose persisted Judge decision is VERIFIED
++
++This keeps the prototype locally executable while making the configurations
++explicit and comparable.
++"""
++from __future__ import annotations
++
++import json
++from dataclasses import dataclass
++from pathlib import Path
++from typing import Literal
++
++from sqlalchemy import select
++from sqlalchemy.orm import Session
++
++from app.models import DecisionRow, EvidenceRow, FindingRow, ReviewRow, StaticResultRow
++
++EvaluationMode = Literal["single_llm", "multi_agent", "proposed"]
++
++
++@dataclass(frozen=True)
++class GroundTruthSample:
++    sample_id: str
++    file: str
++    category: str
++    expected_vulnerable: bool
++    start_line: int | None = None
++    end_line: int | None = None
++
++
++@dataclass(frozen=True)
++class EvaluationResult:
++    review_id: str
++    mode: EvaluationMode
++    true_positives: int
++    false_positives: int
++    false_negatives: int
++    true_negatives: int
++    precision: float
++    recall: float
++    false_positive_rate: float
++    evidence_completeness: float
++    predictions: int
++    matched_samples: int
++
++
++def load_ground_truth(path: Path) -> list[GroundTruthSample]:
++    """Load researcher-approved ground truth; never mutate it."""
++    with path.open(encoding="utf-8") as fh:
++        payload = json.load(fh)
++
++    samples: list[GroundTruthSample] = []
++    for raw in payload.get("samples", []):
++        samples.append(
++            GroundTruthSample(
++                sample_id=str(raw["id"]),
++                file=str(raw["file"]).replace("\\", "/"),
++                category=str(raw["category"]),
++                expected_vulnerable=bool(raw["expected_vulnerable"]),
++                start_line=raw.get("start_line"),
++                end_line=raw.get("end_line"),
++            )
++        )
++    return samples
++
++
++def _overlaps(prediction: FindingRow, sample: GroundTruthSample) -> bool:
++    if prediction.file.replace("\\", "/") != sample.file:
++        return False
++    if prediction.category != sample.category:
++        return False
++    if sample.start_line is None:
++        return True
++
++    pred_end = prediction.end_line or prediction.start_line
++    sample_end = sample.end_line or sample.start_line
++    return prediction.start_line <= sample_end and sample.start_line <= pred_end
++
++
++def _predictions_for_mode(
++    findings: list[FindingRow],
++    decisions: dict[str, DecisionRow],
++    mode: EvaluationMode,
++) -> list[FindingRow]:
++    if mode == "single_llm":
++        return [f for f in findings if f.agent == "security_review"]
++    if mode == "multi_agent":
++        return findings
++    return [f for f in findings if decisions.get(f.finding_id) and decisions[f.finding_id].status == "VERIFIED"]
++
++
++def _safe_ratio(numerator: int | float, denominator: int | float) -> float:
++    return round(numerator / denominator, 4) if denominator else 0.0
++
++
++def _evidence_completeness(
++    predictions: list[FindingRow],
++    evidence: dict[str, EvidenceRow],
++    static: list[StaticResultRow],
++) -> float:
++    """Average established evidence elements over predicted findings.
++
++    Five elements are checked: source, sink, data flow, security-control record,
++    and matched static-analysis corroboration. A present=False security-control
++    object still counts as established evidence because it is a verified finding
++    that the control is absent.
++    """
++    if not predictions:
++        return 0.0
++
++    static_by_finding: dict[str, bool] = {}
++    for row in static:
++        if row.finding_id and row.matched:
++            static_by_finding[row.finding_id] = True
++
++    total = 0
++    for finding in predictions:
++        ev = evidence.get(finding.finding_id)
++        if ev is None:
++            continue
++        total += sum(
++            (
++                ev.source is not None,
++                ev.sink is not None,
++                ev.data_flow is not None,
++                ev.security_control is not None,
++                static_by_finding.get(finding.finding_id, False),
++            )
++        )
++
++    return round(total / (len(predictions) * 5), 4)
++
++
++def evaluate_review(
++    session: Session,
++    review: ReviewRow,
++    mode: EvaluationMode,
++    ground_truth_path: Path,
++) -> EvaluationResult:
++    """Calculate actual metrics from persisted predictions and ground truth."""
++    samples = load_ground_truth(ground_truth_path)
++    findings = session.scalars(
++        select(FindingRow)
++        .where(FindingRow.review_id == review.review_id)
++        .order_by(FindingRow.file, FindingRow.start_line, FindingRow.finding_id)
++    ).all()
++    finding_ids = [f.finding_id for f in findings]
++
++    decisions = {
++        d.finding_id: d
++        for d in session.scalars(
++            select(DecisionRow).where(DecisionRow.finding_id.in_(finding_ids))
++        ).all()
++    } if finding_ids else {}
++
++    evidence = {
++        e.finding_id: e
++        for e in session.scalars(
++            select(EvidenceRow).where(EvidenceRow.finding_id.in_(finding_ids))
++        ).all()
++    } if finding_ids else {}
++
++    static = session.scalars(
++        select(StaticResultRow).where(StaticResultRow.review_id == review.review_id)
++    ).all()
++
++    predictions = _predictions_for_mode(findings, decisions, mode)
++
++    tp = fp = fn = tn = 0
++    matched_ids: set[str] = set()
++
++    # Sample-level matching avoids counting duplicate agent findings as separate
++    # vulnerabilities. This is intentionally simple and reproducible.
++    for sample in samples:
++        matched = [f for f in predictions if _overlaps(f, sample)]
++        if sample.expected_vulnerable:
++            if matched:
++                tp += 1
++                matched_ids.add(sample.sample_id)
++            else:
++                fn += 1
++        elif matched:
++            fp += 1
++        else:
++            tn += 1
++
++    return EvaluationResult(
++        review_id=review.review_id,
++        mode=mode,
++        true_positives=tp,
++        false_positives=fp,
++        false_negatives=fn,
++        true_negatives=tn,
++        precision=_safe_ratio(tp, tp + fp),
++        recall=_safe_ratio(tp, tp + fn),
++        false_positive_rate=_safe_ratio(fp, fp + tn),
++        evidence_completeness=_evidence_completeness(predictions, evidence, static),
++        predictions=len(predictions),
++        matched_samples=len(matched_ids),
++    )
+--- a/backend/app/schemas.py
++++ b/backend/app/schemas.py
+@@ -1,194 +1,212 @@
+-"""Pydantic models.
+-
+-Review / CandidateFinding / Evidence / StaticAnalysisResult / Decision mirror the
+-canonical JSON schemas in ``schemas/`` (``extra="forbid"`` + strict types, matching
+-``additionalProperties: false``). ``tests/test_schema_contracts.py`` fails if they drift.
+-
+-CodeUnit has NO schema file in ``schemas/``; its fields come from ARCHITECTURE.md
+-section 5 ("Code-unit metadata"). Request/summary models below are API plumbing only.
+-"""
+-from __future__ import annotations
+-
+-from datetime import datetime
+-from typing import Literal
+-
+-from pydantic import BaseModel, ConfigDict, Field, model_validator
+-
+-Language = Literal["python"]
+-ReviewStatus = Literal["PENDING", "RUNNING", "COMPLETED", "FAILED"]
+-AgentName = Literal["security_review", "owasp_cwe", "crypto", "auth"]
+-Category = Literal[
+-    "sql_injection",
+-    "command_injection",
+-    "hardcoded_secret",
+-    "weak_cryptography",
+-    "authentication_authorization",
+-]
+-Severity = Literal["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+-DecisionStatus = Literal["VERIFIED", "UNCERTAIN", "REJECTED"]
+-StaticTool = Literal["bandit", "ast_rules"]
+-
+-
+-class _Contract(BaseModel):
+-    model_config = ConfigDict(extra="forbid", strict=True, from_attributes=True)
+-
+-
+-# --------------------------------------------------------------------------- schemas/
+-class Review(_Contract):
+-    review_id: str
+-    project_name: str
+-    language: Language
+-    status: ReviewStatus
+-    created_at: datetime
+-
+-
+-class CandidateFinding(_Contract):
+-    finding_id: str
+-    review_id: str
+-    agent: AgentName
+-    title: str
+-    category: Category
+-    cwe: str | None = None
+-    severity: Severity
+-    file: str
+-    start_line: int = Field(ge=1)
+-    end_line: int | None = Field(default=None, ge=1)
+-    function: str | None = None
+-    description: str
+-    reasoning: str | None = None
+-
+-    @model_validator(mode="after")
+-    def _end_not_before_start(self) -> "CandidateFinding":
+-        if self.end_line is not None and self.end_line < self.start_line:
+-            raise ValueError("end_line must be >= start_line")
+-        return self
+-
+-
+-class LocatedEvidence(_Contract):
+-    """Shared shape of the ``source`` and ``sink`` evidence objects."""
+-
+-    found: bool
+-    file: str | None = None
+-    line: int | None = None
+-    code: str | None = None
+-    description: str | None = None
+-
+-
+-class DataFlowEvidence(_Contract):
+-    found: bool
+-    path: list[str] = Field(default_factory=list)
+-    description: str | None = None
+-
+-
+-class SecurityControlEvidence(_Contract):
+-    present: bool
+-    description: str | None = None
+-
+-
+-class Evidence(_Contract):
+-    evidence_id: str
+-    finding_id: str
+-    source: LocatedEvidence | None = None
+-    sink: LocatedEvidence | None = None
+-    data_flow: DataFlowEvidence | None = None
+-    security_control: SecurityControlEvidence | None = None
+-
+-
+-class StaticAnalysisResult(_Contract):
+-    result_id: str
+-    finding_id: str | None
+-    tool: StaticTool
+-    matched: bool
+-    rule_id: str | None = None
+-    severity: str | None = None
+-    file: str | None = None
+-    start_line: int | None = None
+-    end_line: int | None = None
+-    message: str | None = None
+-
+-
+-class Decision(_Contract):
+-    decision_id: str
+-    finding_id: str
+-    status: DecisionStatus
+-    evidence_score: float = Field(ge=0, le=100)
+-    confidence: float = Field(ge=0, le=1)
+-    reason: str
+-    remediation: str | None = None
+-
+-
+-# ------------------------------------------------------- code processing (no schema file)
+-UnitType = Literal["function", "method", "class", "module"]
+-
+-
+-class CodeUnit(BaseModel):
+-    """Structured code unit with preserved metadata (ARCHITECTURE.md section 5)."""
+-
+-    model_config = ConfigDict(extra="forbid", from_attributes=True)
+-
+-    unit_id: str
+-    review_id: str
+-    file: str  # path relative to the reviewed project root (POSIX separators)
+-    language: Language
+-    start_line: int = Field(ge=1)
+-    end_line: int = Field(ge=1)
+-    unit_type: UnitType
+-    function_name: str | None = None
+-    class_name: str | None = None
+-    chunk_index: int | None = None  # set only when a long unit was split into chunks
+-    source_code: str
+-
+-
+-# ------------------------------------------------------------------ API request/response
+-class ReviewCreate(BaseModel):
+-    model_config = ConfigDict(extra="forbid")
+-
+-    project_name: str = Field(min_length=1)
+-    project_path: str = Field(min_length=1)
+-
+-
+-class SourceFileOut(BaseModel):
+-    model_config = ConfigDict(from_attributes=True)
+-
+-    path: str
+-    language: str | None
+-    size_bytes: int
+-    sha256: str | None
+-    line_count: int | None
+-    processed: bool
+-    skip_reason: str | None
+-    has_syntax_errors: bool
+-
+-
+-class SkippedFile(BaseModel):
+-    file: str
+-    reason: str
+-
+-
+-class ProcessingSummary(BaseModel):
+-    review_id: str
+-    status: ReviewStatus
+-    files_discovered: int
+-    files_processed: int
+-    files_skipped: int
+-    code_units: int
+-    skipped: list[SkippedFile]
+-
+-
+-class EvidenceProcessingSummary(BaseModel):
+-    review_id: str
+-    findings: int
+-    evidence_created: int
+-    status: ReviewStatus
+-
+-
+-class AIProcessingSummary(BaseModel):
+-    review_id: str
+-    agents: list[AgentName]
+-    code_units: int
+-    findings: int
+-    status: ReviewStatus
+-
+-
+-class FindingOut(CandidateFinding):
+-    pass
++"""Pydantic models.
++
++Review / CandidateFinding / Evidence / StaticAnalysisResult / Decision mirror the
++canonical JSON schemas in ``schemas/`` (``extra="forbid"`` + strict types, matching
++``additionalProperties: false``). ``tests/test_schema_contracts.py`` fails if they drift.
++
++CodeUnit has NO schema file in ``schemas/``; its fields come from ARCHITECTURE.md
++section 5 ("Code-unit metadata"). Request/summary models below are API plumbing only.
++"""
++from __future__ import annotations
++
++from datetime import datetime
++from typing import Literal
++
++from pydantic import BaseModel, ConfigDict, Field, model_validator
++
++Language = Literal["python"]
++ReviewStatus = Literal["PENDING", "RUNNING", "COMPLETED", "FAILED"]
++AgentName = Literal["security_review", "owasp_cwe", "crypto", "auth"]
++Category = Literal[
++    "sql_injection",
++    "command_injection",
++    "hardcoded_secret",
++    "weak_cryptography",
++    "authentication_authorization",
++]
++Severity = Literal["CRITICAL", "HIGH", "MEDIUM", "LOW"]
++DecisionStatus = Literal["VERIFIED", "UNCERTAIN", "REJECTED"]
++StaticTool = Literal["bandit", "ast_rules"]
++
++
++class _Contract(BaseModel):
++    model_config = ConfigDict(extra="forbid", strict=True, from_attributes=True)
++
++
++# --------------------------------------------------------------------------- schemas/
++class Review(_Contract):
++    review_id: str
++    project_name: str
++    language: Language
++    status: ReviewStatus
++    created_at: datetime
++
++
++class CandidateFinding(_Contract):
++    finding_id: str
++    review_id: str
++    agent: AgentName
++    title: str
++    category: Category
++    cwe: str | None = None
++    severity: Severity
++    file: str
++    start_line: int = Field(ge=1)
++    end_line: int | None = Field(default=None, ge=1)
++    function: str | None = None
++    description: str
++    reasoning: str | None = None
++
++    @model_validator(mode="after")
++    def _end_not_before_start(self) -> "CandidateFinding":
++        if self.end_line is not None and self.end_line < self.start_line:
++            raise ValueError("end_line must be >= start_line")
++        return self
++
++
++class LocatedEvidence(_Contract):
++    """Shared shape of the ``source`` and ``sink`` evidence objects."""
++
++    found: bool
++    file: str | None = None
++    line: int | None = None
++    code: str | None = None
++    description: str | None = None
++
++
++class DataFlowEvidence(_Contract):
++    found: bool
++    path: list[str] = Field(default_factory=list)
++    description: str | None = None
++
++
++class SecurityControlEvidence(_Contract):
++    present: bool
++    description: str | None = None
++
++
++class Evidence(_Contract):
++    evidence_id: str
++    finding_id: str
++    source: LocatedEvidence | None = None
++    sink: LocatedEvidence | None = None
++    data_flow: DataFlowEvidence | None = None
++    security_control: SecurityControlEvidence | None = None
++
++
++class StaticAnalysisResult(_Contract):
++    result_id: str
++    finding_id: str | None
++    tool: StaticTool
++    matched: bool
++    rule_id: str | None = None
++    severity: str | None = None
++    file: str | None = None
++    start_line: int | None = None
++    end_line: int | None = None
++    message: str | None = None
++
++
++class Decision(_Contract):
++    decision_id: str
++    finding_id: str
++    status: DecisionStatus
++    evidence_score: float = Field(ge=0, le=100)
++    confidence: float = Field(ge=0, le=1)
++    reason: str
++    remediation: str | None = None
++
++
++EvaluationMode = Literal["single_llm", "multi_agent", "proposed"]
++
++
++class EvaluationResult(_Contract):
++    review_id: str
++    mode: EvaluationMode
++    true_positives: int
++    false_positives: int
++    false_negatives: int
++    true_negatives: int
++    precision: float = Field(ge=0, le=1)
++    recall: float = Field(ge=0, le=1)
++    false_positive_rate: float = Field(ge=0, le=1)
++    evidence_completeness: float = Field(ge=0, le=1)
++    predictions: int = Field(ge=0)
++    matched_samples: int = Field(ge=0)
++
++
++# ------------------------------------------------------- code processing (no schema file)
++UnitType = Literal["function", "method", "class", "module"]
++
++
++class CodeUnit(BaseModel):
++    """Structured code unit with preserved metadata (ARCHITECTURE.md section 5)."""
++
++    model_config = ConfigDict(extra="forbid", from_attributes=True)
++
++    unit_id: str
++    review_id: str
++    file: str  # path relative to the reviewed project root (POSIX separators)
++    language: Language
++    start_line: int = Field(ge=1)
++    end_line: int = Field(ge=1)
++    unit_type: UnitType
++    function_name: str | None = None
++    class_name: str | None = None
++    chunk_index: int | None = None  # set only when a long unit was split into chunks
++    source_code: str
++
++
++# ------------------------------------------------------------------ API request/response
++class ReviewCreate(BaseModel):
++    model_config = ConfigDict(extra="forbid")
++
++    project_name: str = Field(min_length=1)
++    project_path: str = Field(min_length=1)
++
++
++class SourceFileOut(BaseModel):
++    model_config = ConfigDict(from_attributes=True)
++
++    path: str
++    language: str | None
++    size_bytes: int
++    sha256: str | None
++    line_count: int | None
++    processed: bool
++    skip_reason: str | None
++    has_syntax_errors: bool
++
++
++class SkippedFile(BaseModel):
++    file: str
++    reason: str
++
++
++class ProcessingSummary(BaseModel):
++    review_id: str
++    status: ReviewStatus
++    files_discovered: int
++    files_processed: int
++    files_skipped: int
++    code_units: int
++    skipped: list[SkippedFile]
++
++
++class EvidenceProcessingSummary(BaseModel):
++    review_id: str
++    findings: int
++    evidence_created: int
++    status: ReviewStatus
++
++
++class AIProcessingSummary(BaseModel):
++    review_id: str
++    agents: list[AgentName]
++    code_units: int
++    findings: int
++    status: ReviewStatus
++
++
++class FindingOut(CandidateFinding):
++    pass
+--- /dev/null
++++ b/backend/tests/test_evaluation.py
+@@ -0,0 +1,149 @@
++import json
++
++from app.models import DecisionRow, EvidenceRow, FindingRow, ReviewRow, StaticResultRow, utcnow
++from app.processing.evaluation import evaluate_review, load_ground_truth
++
++
++def _review():
++    return ReviewRow(
++        review_id="r1",
++        project_name="p",
++        language="python",
++        status="RUNNING",
++        created_at=utcnow(),
++        target_path="/x",
++    )
++
++
++def _finding(fid, file, category, line, agent="security_review"):
++    return FindingRow(
++        finding_id=fid,
++        review_id="r1",
++        agent=agent,
++        title="candidate",
++        category=category,
++        severity="HIGH",
++        file=file,
++        start_line=line,
++        end_line=line,
++        description="candidate",
++    )
++
++
++def _ground_truth(tmp_path):
++    path = tmp_path / "ground_truth.json"
++    path.write_text(
++        json.dumps(
++            {
++                "samples": [
++                    {
++                        "id": "V1",
++                        "file": "vulnerable/V1.py",
++                        "category": "sql_injection",
++                        "expected_vulnerable": True,
++                        "start_line": 5,
++                        "end_line": 5,
++                    },
++                    {
++                        "id": "S1",
++                        "file": "secure/S1.py",
++                        "category": "sql_injection",
++                        "expected_vulnerable": False,
++                    },
++                ]
++            }
++        ),
++        encoding="utf-8",
++    )
++    return path
++
++
++def test_evaluation_counts_tp_fn_tn_and_fp(tmp_path):
++    from app.database import init_db, make_engine, make_session_factory
++
++    engine = make_engine(f"sqlite:///{tmp_path / 'd.db'}")
++    init_db(engine)
++    s = make_session_factory(engine)()
++    s.add(_review())
++    s.add(_finding("f1", "vulnerable/V1.py", "sql_injection", 5))
++    s.add(_finding("f2", "secure/S1.py", "sql_injection", 3))
++    s.add(_finding("f3", "unrelated.py", "sql_injection", 1))
++    s.commit()
++
++    result = evaluate_review(s, s.get(ReviewRow, "r1"), "single_llm", _ground_truth(tmp_path))
++    assert (result.true_positives, result.false_positives, result.false_negatives, result.true_negatives) == (1, 1, 0, 0)
++    assert result.precision == 0.5
++    assert result.recall == 1.0
++
++
++def test_multi_agent_deduplicates_at_sample_level(tmp_path):
++    from app.database import init_db, make_engine, make_session_factory
++
++    engine = make_engine(f"sqlite:///{tmp_path / 'd.db'}")
++    init_db(engine)
++    s = make_session_factory(engine)()
++    s.add(_review())
++    s.add(_finding("f1", "vulnerable/V1.py", "sql_injection", 5, "security_review"))
++    s.add(_finding("f2", "vulnerable/V1.py", "sql_injection", 5, "owasp_cwe"))
++    s.commit()
++
++    result = evaluate_review(s, s.get(ReviewRow, "r1"), "multi_agent", _ground_truth(tmp_path))
++    assert result.true_positives == 1
++    assert result.false_positives == 0
++    assert result.predictions == 2
++
++
++def test_proposed_uses_only_verified_decisions_and_calculates_evidence(tmp_path):
++    from app.database import init_db, make_engine, make_session_factory
++
++    engine = make_engine(f"sqlite:///{tmp_path / 'd.db'}")
++    init_db(engine)
++    s = make_session_factory(engine)()
++    s.add(_review())
++    s.add(_finding("f1", "vulnerable/V1.py", "sql_injection", 5))
++    s.add(_finding("f2", "secure/S1.py", "sql_injection", 3))
++    s.flush()
++    s.add_all(
++        [
++            DecisionRow(
++                decision_id="d1",
++                finding_id="f1",
++                status="VERIFIED",
++                evidence_score=85,
++                confidence=0.85,
++                reason="verified",
++            ),
++            DecisionRow(
++                decision_id="d2",
++                finding_id="f2",
++                status="REJECTED",
++                evidence_score=0,
++                confidence=0.9,
++                reason="rejected",
++            ),
++            EvidenceRow(
++                evidence_id="e1",
++                finding_id="f1",
++                source={"found": True},
++                sink={"found": True},
++                data_flow={"found": True, "path": ["input", "execute"]},
++                security_control={"present": False},
++            ),
++            StaticResultRow(
++                result_id="s1",
++                review_id="r1",
++                finding_id="f1",
++                tool="bandit",
++                matched=True,
++                rule_id="B608",
++            ),
++        ]
++    )
++    s.commit()
++
++    result = evaluate_review(s, s.get(ReviewRow, "r1"), "proposed", _ground_truth(tmp_path))
++    assert result.true_positives == 1
++    assert result.false_positives == 0
++    assert result.false_negatives == 0
++    assert result.true_negatives == 1
++    assert result.evidence_completeness == 1.0
+--- a/backend/tests/test_schema_contracts.py
++++ b/backend/tests/test_schema_contracts.py
+@@ -5,7 +5,7 @@
+ from jsonschema import Draft202012Validator, FormatChecker
+ from pydantic import ValidationError
+ 
+-from app.schemas import CandidateFinding, Decision, Evidence, Review, StaticAnalysisResult
++from app.schemas import CandidateFinding, Decision, Evidence, EvaluationResult, Review, StaticAnalysisResult
+ 
+ CASES = {
+     "review": (Review, {
+@@ -26,6 +26,11 @@
+     "decision": (Decision, {
+         "decision_id": "d1", "finding_id": "f1", "status": "VERIFIED",
+         "evidence_score": 80, "confidence": 0.5, "reason": "r"}),
++    "evaluation": (EvaluationResult, {
++        "review_id": "r1", "mode": "proposed",
++        "true_positives": 1, "false_positives": 0, "false_negatives": 0, "true_negatives": 1,
++        "precision": 1.0, "recall": 1.0, "false_positive_rate": 0.0,
++        "evidence_completeness": 1.0, "predictions": 1, "matched_samples": 1}),
+ }
+ SCHEMA_FILES = {
+     "review": "review", "finding": "finding", "evidence": "evidence",
+--- /dev/null
++++ b/schemas/evaluation.schema.json
+@@ -0,0 +1,76 @@
++{
++  "$schema": "https://json-schema.org/draft/2020-12/schema",
++  "title": "EvaluationResult",
++  "type": "object",
++  "additionalProperties": false,
++  "required": [
++    "review_id",
++    "mode",
++    "true_positives",
++    "false_positives",
++    "false_negatives",
++    "true_negatives",
++    "precision",
++    "recall",
++    "false_positive_rate",
++    "evidence_completeness",
++    "predictions",
++    "matched_samples"
++  ],
++  "properties": {
++    "review_id": {
++      "type": "string"
++    },
++    "mode": {
++      "enum": [
++        "single_llm",
++        "multi_agent",
++        "proposed"
++      ]
++    },
++    "true_positives": {
++      "type": "integer",
++      "minimum": 0
++    },
++    "false_positives": {
++      "type": "integer",
++      "minimum": 0
++    },
++    "false_negatives": {
++      "type": "integer",
++      "minimum": 0
++    },
++    "true_negatives": {
++      "type": "integer",
++      "minimum": 0
++    },
++    "precision": {
++      "type": "number",
++      "minimum": 0,
++      "maximum": 1
++    },
++    "recall": {
++      "type": "number",
++      "minimum": 0,
++      "maximum": 1
++    },
++    "false_positive_rate": {
++      "type": "number",
++      "minimum": 0,
++      "maximum": 1
++    },
++    "evidence_completeness": {
++      "type": "number",
++      "minimum": 0,
++      "maximum": 1
++    },
++    "predictions": {
++      "type": "integer",
++      "minimum": 0
++    },
++    "matched_samples": {
++      "type": "integer",
++      "minimum": 0
++    }
++  }
++}

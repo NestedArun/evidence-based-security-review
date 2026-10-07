@@ -209,3 +209,74 @@ The first prototype should be capable of:
 7. Producing a comparison table.
 
 Dataset expansion, confidence calibration, review-time analysis, and deeper statistical analysis will be performed during the subsequent research period.
+
+
+## 13. Implemented Evaluation Pipeline
+
+Checkpoint 6 provides a local evaluation API over persisted review results.
+
+The selectable modes are:
+
+* `single_llm` — predictions produced by the broad `security_review` agent.
+* `multi_agent` — predictions from all specialized agents.
+* `proposed` — findings that received a `VERIFIED` Judge decision.
+
+For the current prototype these modes are evaluated as views over the same persisted review run. This keeps the comparison reproducible and avoids requiring three separate project copies. A future experiment can execute the modes as independent runs when stricter experimental isolation is required.
+
+### Evaluation Endpoint
+
+```text
+POST /reviews/{review_id}/evaluation?mode=single_llm
+POST /reviews/{review_id}/evaluation?mode=multi_agent
+POST /reviews/{review_id}/evaluation?mode=proposed
+
+GET /reviews/{review_id}/evaluation
+```
+
+Each evaluation result records:
+
+* True Positives
+* False Positives
+* False Negatives
+* True Negatives
+* Precision
+* Recall
+* False Positive Rate
+* Evidence Completeness
+* Number of predictions
+* Number of matched ground-truth samples
+
+Evaluation runs are persisted in SQLite so that experimental results are not merely transient API output.
+
+### Matching Rule
+
+Matching is intentionally simple:
+
+1. vulnerability category must match;
+2. file path must match;
+3. predicted and ground-truth source locations must overlap when a ground-truth location is defined;
+4. when a review targets a subdirectory of ``dataset/``, review-relative finding paths are
+   resolved into dataset-relative paths and only ground-truth samples inside that reviewed
+   target are included.
+
+Multiple predictions matching the same ground-truth sample count once at the sample level. This prevents multiple agents describing the same vulnerability from artificially increasing the true-positive count.
+
+### Evidence Completeness
+
+The implemented score checks five evidence elements:
+
+1. source evidence record;
+2. sink evidence record;
+3. data-flow evidence record;
+4. security-control evidence record;
+5. matched static-analysis corroboration.
+
+The metric is the average fraction of these elements established across predicted findings.
+
+A `security_control` record with `present=false` still counts as established evidence because it records an independently verified absence of the relevant control.
+
+### Ground-Truth Isolation
+
+`dataset/ground_truth.json` is loaded only by the evaluation component. It is not passed to the AI agents or evidence-verification code.
+
+Ground-truth files and labels therefore remain outside the prediction path.

@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EvaluationResult",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "review_id",
+    "mode",
+    "true_positives",
+    "false_positives",
+    "false_negatives",
+    "true_negatives",
+    "precision",
+    "recall",
+    "false_positive_rate",
+    "evidence_completeness",
+    "predictions",
+    "matched_samples"
+  ],
+  "properties": {
+    "review_id": {
+      "type": "string"
+    },
+    "mode": {
+      "enum": [
+        "single_llm",
+        "multi_agent",
+        "proposed"
+      ]
+    },
+    "true_positives": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "false_positives": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "false_negatives": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "true_negatives": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "precision": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "recall": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "false_positive_rate": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "evidence_completeness": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "predictions": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "matched_samples": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}
