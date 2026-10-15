@@ -16,9 +16,11 @@ Nothing here executes the reviewed source code.
 from __future__ import annotations
 
 import uuid
-from pathlib import Path
+import tempfile
+import shutil
+from pathlib import Path, PurePosixPath
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -98,6 +100,64 @@ def create_review(
     db.add(review)
     db.commit()
 
+    return Review.model_validate(review)
+
+
+@router.post("/upload-folder", response_model=Review, status_code=201)
+async def create_review_from_folder_upload(
+    request: Request,
+    project_name: str = Form(..., min_length=1, max_length=120),
+    files: list[UploadFile] = File(...),
+    db: Session = Depends(get_db),
+):
+    """Create a review from Python files selected through the browser folder picker.
+
+    Browsers intentionally do not expose the user's absolute folder path. Files are
+    copied into a dedicated temporary review directory using only safe relative paths.
+    """
+    python_files = [upload for upload in files if (upload.filename or "").lower().endswith(".py")]
+    if not python_files:
+        raise HTTPException(status_code=400, detail="The selected folder contains no Python (.py) files.")
+    if len(python_files) > 500:
+        raise HTTPException(status_code=413, detail="Too many Python files; the limit is 500.")
+
+    upload_root = Path(tempfile.mkdtemp(prefix="ebsr-upload-")).resolve()
+    total_bytes = 0
+    try:
+        for upload in python_files:
+            raw_name = (upload.filename or "").replace("\\", "/")
+            relative = PurePosixPath(raw_name)
+            if relative.is_absolute() or not relative.parts or any(part in ("", ".", "..") for part in relative.parts):
+                raise HTTPException(status_code=400, detail=f"Invalid relative file path: {raw_name}")
+            destination = (upload_root / Path(*relative.parts)).resolve()
+            if upload_root not in destination.parents:
+                raise HTTPException(status_code=400, detail=f"Invalid relative file path: {raw_name}")
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            content = await upload.read()
+            total_bytes += len(content)
+            if len(content) > 5 * 1024 * 1024:
+                raise HTTPException(status_code=413, detail=f"File exceeds 5 MB limit: {relative.name}")
+            if total_bytes > 25 * 1024 * 1024:
+                raise HTTPException(status_code=413, detail="Total Python upload exceeds 25 MB.")
+            destination.write_bytes(content)
+    except Exception:
+        shutil.rmtree(upload_root, ignore_errors=True)
+        raise
+    finally:
+        for upload in files:
+            await upload.close()
+
+    config = request.app.state.project_config
+    review = ReviewRow(
+        review_id=str(uuid.uuid4()),
+        project_name=project_name.strip(),
+        language=config.analysis.language,
+        status="PENDING",
+        created_at=utcnow(),
+        target_path=str(upload_root),
+    )
+    db.add(review)
+    db.commit()
     return Review.model_validate(review)
 
 

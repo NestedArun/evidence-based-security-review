@@ -44,6 +44,37 @@ def _is_import_only_unit(unit) -> bool:
         for line in lines
     )
 
+
+_CRYPTO_HINTS = (
+    "crypt", "hash", "md5", "sha1", "sha256", "bcrypt", "password",
+    "secret", "api_key", "private_key", "cipher", "encrypt", "decrypt",
+    "digest", "hmac", "certificate", "ssl", "tls", "token",
+)
+_AUTH_HINTS = (
+    "auth", "login", "logout", "password", "session", "permission",
+    "role", "admin", "authorize", "authenticate", "access", "credential",
+    "jwt", "privilege", "owner", "is_admin",
+)
+
+
+def _agent_applies_to_unit(spec, unit) -> bool:
+    """Route specialist agents only to units with relevant security signals.
+
+    The two general-purpose agents still inspect every eligible code unit, so
+    this routing reduces redundant specialist calls without removing broad
+    vulnerability coverage.
+    """
+    if spec.name not in {"crypto", "auth"}:
+        return True
+
+    text = (
+        f"{unit.file}\\n{unit.function_name or ''}\\n"
+        f"{unit.class_name or ''}\\n{unit.source_code}"
+    ).lower()
+    hints = _CRYPTO_HINTS if spec.name == "crypto" else _AUTH_HINTS
+    return any(hint in text for hint in hints)
+
+
 def run_ai_review(
     session: Session,
     review: ReviewRow,
@@ -90,12 +121,14 @@ def run_ai_review(
         (spec, unit)
         for unit in code_units
         for spec in AGENTS
+        if _agent_applies_to_unit(spec, unit)
     ]
 
     findings: list[CandidateFinding] = []
 
     # Two concurrent Ollama requests are used deliberately. Four concurrent
-    # generations can overload a CPU-only development machine.
+    # generations can overload a CPU-only development machine. Specialist
+    # routing reduces the number of requests before concurrency is used.
     with ThreadPoolExecutor(max_workers=2) as executor:
         for finding in executor.map(review_agent, jobs):
             if finding is not None:

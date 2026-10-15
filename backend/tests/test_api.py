@@ -152,7 +152,7 @@ def test_ai_review_rerun_replaces_stale_outputs(client, make_project, monkeypatc
     )
     import app.processing.ai as ai_processing
 
-    root = make_project({"a.py": "def f(value):\\n    return value\\n"})
+    root = make_project({"a.py": "def f(value):\n    return value\n"})
     review_id = _create(client, root).json()["review_id"]
     assert client.post(f"/reviews/{review_id}/process").status_code == 200
 
@@ -237,3 +237,33 @@ def test_ai_review_rerun_replaces_stale_outputs(client, make_project, monkeypatc
     assert client.get(f"/reviews/{review_id}/static-analysis").json() == []
     assert client.get(f"/reviews/{review_id}/decisions").json() == []
     assert client.get(f"/reviews/{review_id}/evaluation").json() == []
+
+
+def test_create_review_from_folder_upload(client):
+    response = client.post(
+        "/reviews/upload-folder",
+        data={"project_name": "uploaded-demo"},
+        files=[
+            ("files", ("sample/main.py", b"def main():\n    return 1\n", "text/x-python")),
+            ("files", ("sample/helper.py", b"VALUE = 42\n", "text/x-python")),
+            ("files", ("sample/notes.txt", b"ignore me", "text/plain")),
+        ],
+    )
+    assert response.status_code == 201, response.text
+    review = response.json()
+    assert review["project_name"] == "uploaded-demo"
+    assert review["status"] == "PENDING"
+    rid = review["review_id"]
+    processed = client.post(f"/reviews/{rid}/process")
+    assert processed.status_code == 200, processed.text
+    files = client.get(f"/reviews/{rid}/files").json()
+    assert {item["path"] for item in files} == {"sample/main.py", "sample/helper.py"}
+
+
+def test_create_review_from_folder_upload_requires_python_files(client):
+    response = client.post(
+        "/reviews/upload-folder",
+        data={"project_name": "no-python"},
+        files=[("files", ("folder/readme.txt", b"hello", "text/plain"))],
+    )
+    assert response.status_code == 400

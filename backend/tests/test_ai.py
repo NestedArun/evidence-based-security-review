@@ -111,3 +111,48 @@ def test_no_finding_is_allowed():
 def test_ollama_placeholder_fails_explicitly():
     with pytest.raises(OllamaError, match="No Ollama model configured"):
         OllamaClient("CONFIGURE_LOCALLY").chat_json("x", "y")
+
+
+def test_specialist_routing_keeps_general_agents_for_every_unit():
+    from app.processing.ai import _agent_applies_to_unit
+
+    code = unit()
+    general = [agent for agent in AGENTS if agent.name in {"security_review", "owasp_cwe"}]
+    assert all(_agent_applies_to_unit(agent, code) for agent in general)
+
+
+def test_crypto_agent_routes_to_secret_and_hash_units():
+    from app.processing.ai import _agent_applies_to_unit
+
+    crypto = next(agent for agent in AGENTS if agent.name == "crypto")
+    secret_unit = CodeUnit(
+        unit_id="secret", review_id="r1", file="V003_hardcoded_secret.py",
+        language="python", start_line=1, end_line=2, unit_type="module",
+        function_name=None, class_name=None,
+        source_code='API_KEY = "demo-secret"\\n',
+    )
+    ordinary_unit = CodeUnit(
+        unit_id="ordinary", review_id="r1", file="sample.py", language="python",
+        start_line=1, end_line=2, unit_type="function", function_name="calculate",
+        class_name=None, source_code="def calculate(a, b):\\n    return a + b\\n",
+    )
+    assert _agent_applies_to_unit(crypto, secret_unit)
+    assert not _agent_applies_to_unit(crypto, ordinary_unit)
+
+
+def test_auth_agent_routes_to_authentication_units():
+    from app.processing.ai import _agent_applies_to_unit
+
+    auth = next(agent for agent in AGENTS if agent.name == "auth")
+    auth_unit = CodeUnit(
+        unit_id="auth", review_id="r1", file="views.py", language="python",
+        start_line=1, end_line=2, unit_type="function", function_name="get_admin_report",
+        class_name=None, source_code="def get_admin_report(user):\\n    return user\\n",
+    )
+    ordinary_unit = CodeUnit(
+        unit_id="ordinary", review_id="r1", file="sample.py", language="python",
+        start_line=1, end_line=2, unit_type="function", function_name="calculate",
+        class_name=None, source_code="def calculate(a, b):\\n    return a + b\\n",
+    )
+    assert _agent_applies_to_unit(auth, auth_unit)
+    assert not _agent_applies_to_unit(auth, ordinary_unit)

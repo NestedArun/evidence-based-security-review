@@ -26,13 +26,25 @@ button.secondary{background:#edf1f6;color:#27364d}button:disabled{opacity:.45;cu
 .panel{display:none}.panel.active{display:block}.row{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid #edf0f4}.row:last-child{border-bottom:0}
 .finding{border:1px solid #e0e5ed;border-radius:9px;padding:13px;margin-bottom:9px}.finding h3{font-size:14px;margin:0 0 7px}.meta{font-size:12px;color:#697486}.sev{font-weight:700}.pre{white-space:pre-wrap;background:#f6f8fa;border-radius:7px;padding:9px;font:12px Consolas,monospace;overflow:auto}
 .notice{font-size:12px;color:#687386;margin-top:9px;min-height:17px}.error{color:#9a2f2f}.empty{color:#7a8494;padding:18px 0;text-align:center;font-size:13px}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 0}.search{max-width:340px}.pill{display:inline-block;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700;background:#edf1f6;color:#4a586d}.pill.good{background:#e7f5eb;color:#24713b}.pill.warn{background:#fff4d6;color:#805b00}.pill.bad{background:#fdeaea;color:#9a2f2f}.file-row,.unit-row{border:1px solid #e1e6ef;border-radius:8px;padding:12px;margin-bottom:8px}.file-row strong,.unit-row strong{display:block;font-size:13px;overflow-wrap:anywhere}.code{white-space:pre-wrap;overflow-wrap:anywhere;background:#f6f8fa;border:1px solid #e7ebf1;border-radius:8px;padding:12px;font:12px/1.55 Consolas,monospace;max-height:360px;overflow:auto}.muted{color:#748094}.workflow-note{font-size:12px;color:#687386;margin-top:10px}.tab{white-space:nowrap}.tabs{overflow-x:auto}
+.progress-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}
+.progress-item{border:1px solid #e1e6ef;border-radius:9px;padding:11px;min-width:0}
+.progress-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:7px;font-size:12px}
+.progress-head strong{font-size:12px}.progress-state{color:#697486;font-size:11px;white-space:nowrap}
+.progress-track{height:7px;background:#edf1f6;border-radius:999px;overflow:hidden}
+.progress-fill{height:100%;width:0;background:#526a8a;border-radius:999px;transition:width .25s ease}
+.progress-fill.done{background:#2e8b57}.progress-fill.failed{background:#c24141}
+.progress-fill.running{width:35%;background:#526a8a;animation:progressSweep 1.35s ease-in-out infinite}
+@keyframes progressSweep{from{transform:translateX(-110%)}to{transform:translateX(310%)}}
+.upload-progress{margin-top:10px}.upload-progress[hidden]{display:none}.upload-progress .progress-track{height:8px}.upload-progress .progress-fill{background:#526a8a}
+@media(max-width:600px){.progress-list{grid-template-columns:1fr}}
 @media(max-width:850px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.pipeline{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header>
-  <div><h1>Evidence-Based Security Code Review</h1><div class="sub">Basic demonstration interface for the six-checkpoint review pipeline</div></div>
+  <div><h1>Evidence-Based Security Code Review</h1><div class="sub">Security review workspace · local analysis · evidence-backed decisions</div></div>
   <button class="secondary" id="refresh">Refresh</button>
 </header>
 
@@ -42,10 +54,18 @@ button.secondary{background:#edf1f6;color:#27364d}button:disabled{opacity:.45;cu
     <h2>New Review</h2>
     <form id="createForm">
       <div class="field"><label>Project name</label><input id="projectName" required placeholder="Demo Project"></div>
-      <div class="field"><label>Project path</label><input id="projectPath" required placeholder="C:\path\to\project"></div>
-      <button type="submit">Create Review</button>
+      <div class="field"><label>Project folder</label>
+        <input id="projectFolder" type="file" webkitdirectory directory multiple required aria-describedby="folderHelp" style="padding:8px">
+        <div id="folderHelp" class="meta" style="margin-top:6px">Choose a project folder in File Explorer. Python files inside it will be uploaded for analysis.</div>
+        <div id="folderSelection" class="meta" style="margin-top:6px">No folder selected.</div>
+      </div>
+      <button type="submit">Choose Folder &amp; Create Review</button>
     </form>
-    <div id="createMsg" class="notice"></div>
+    <div id="createMsg" class="notice" role="status" aria-live="polite"></div>
+    <div id="uploadProgress" class="upload-progress" hidden>
+      <div class="progress-head"><strong>Folder upload</strong><span id="uploadProgressLabel" class="progress-state">Preparing…</span></div>
+      <div class="progress-track" role="progressbar" aria-label="Folder upload progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="uploadProgressFill" class="progress-fill"></div></div>
+    </div>
   </section>
   <section class="card" style="margin-top:18px">
     <h2>Reviews</h2><div id="reviewList" class="reviews"></div>
@@ -70,25 +90,38 @@ button.secondary{background:#edf1f6;color:#27364d}button:disabled{opacity:.45;cu
     <div id="s5" class="step">5 · Decision</div><div id="s6" class="step">6 · Evaluation</div>
   </div>
   <div class="actions">
-    <button data-action="process">Process Code</button>
-    <button data-action="ai-review">Run AI Review</button>
-    <button data-action="evidence">Verify Evidence</button>
-    <button data-action="static-analysis">Static Analysis</button>
-    <button data-action="decision">Make Decisions</button>
-    <button data-action="evaluation">Evaluate</button>
+    <button data-action="process" title="Discover files and extract code units">1. Process Code</button>
+    <button data-action="ai-review" title="Generate candidate findings with local AI agents">2. AI Review</button>
+    <button data-action="evidence" title="Check source, sink, and data-flow evidence">3. Verify Evidence</button>
+    <button data-action="static-analysis" title="Run configured static analyzers">4. Static Analysis</button>
+    <button data-action="decision" title="Calculate evidence-based decisions">5. Make Decisions</button>
+    <button data-action="evaluation" title="Compare results with ground truth">6. Evaluate</button>
   </div>
-  <div id="actionMsg" class="notice"></div>
+  <div id="actionMsg" class="notice" role="status" aria-live="polite"></div>
+  <div id="workflowNote" class="workflow-note">Create or select a review to begin.</div>
+  <div class="progress-list" id="progressList" aria-label="Workflow progress">
+    <div class="progress-item" data-progress="process"><div class="progress-head"><strong>1. Process Code</strong><span class="progress-state">Waiting</span></div><div class="progress-track" role="progressbar" aria-label="Process Code progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-fill"></div></div></div>
+    <div class="progress-item" data-progress="ai-review"><div class="progress-head"><strong>2. AI Review</strong><span class="progress-state">Waiting</span></div><div class="progress-track" role="progressbar" aria-label="AI Review progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-fill"></div></div></div>
+    <div class="progress-item" data-progress="evidence"><div class="progress-head"><strong>3. Verify Evidence</strong><span class="progress-state">Waiting</span></div><div class="progress-track" role="progressbar" aria-label="Evidence verification progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-fill"></div></div></div>
+    <div class="progress-item" data-progress="static-analysis"><div class="progress-head"><strong>4. Static Analysis</strong><span class="progress-state">Waiting</span></div><div class="progress-track" role="progressbar" aria-label="Static analysis progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-fill"></div></div></div>
+    <div class="progress-item" data-progress="decision"><div class="progress-head"><strong>5. Make Decisions</strong><span class="progress-state">Waiting</span></div><div class="progress-track" role="progressbar" aria-label="Decision generation progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-fill"></div></div></div>
+    <div class="progress-item" data-progress="evaluation"><div class="progress-head"><strong>6. Evaluate</strong><span class="progress-state">Waiting</span></div><div class="progress-track" role="progressbar" aria-label="Evaluation progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-fill"></div></div></div>
+  </div>
 </section>
 
 <section class="card" style="margin-top:18px">
 <div class="tabs">
   <button class="tab active" data-tab="findings">Findings</button>
+  <button class="tab" data-tab="files">Files</button>
+  <button class="tab" data-tab="units">Code Units</button>
   <button class="tab" data-tab="evidence">Evidence</button>
   <button class="tab" data-tab="static">Static Analysis</button>
   <button class="tab" data-tab="decisions">Decisions</button>
   <button class="tab" data-tab="evaluation">Evaluation</button>
 </div>
 <div id="findings" class="panel active"></div>
+<div id="files" class="panel"></div>
+<div id="units" class="panel"></div>
 <div id="evidence" class="panel"></div>
 <div id="static" class="panel"></div>
 <div id="decisions" class="panel"></div>
@@ -100,7 +133,7 @@ button.secondary{background:#edf1f6;color:#27364d}button:disabled{opacity:.45;cu
 
 <script>
 (() => {
-const state={review:null,findings:[],evidence:[],staticResults:[],decisions:[],evaluations:[]};
+const state={review:null,findings:[],files:[],units:[],evidence:[],staticResults:[],decisions:[],evaluations:[],busy:false,activeStage:null,stageStartedAt:0,stageTimer:null,stageErrors:{}};
 const $=id=>document.getElementById(id);
 async function api(path,opts={}){const r=await fetch(path,opts);let data={};try{data=await r.json()}catch{}if(!r.ok)throw new Error(data.detail||`HTTP ${r.status}`);return data}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -116,8 +149,8 @@ async function selectReview(id){
 async function loadData(){
  if(!state.review)return;
  const id=state.review.review_id;
- [state.findings,state.evidence,state.staticResults,state.decisions,state.evaluations]=await Promise.all([
-  api(`/reviews/${id}/findings`),api(`/reviews/${id}/evidence`),api(`/reviews/${id}/static-analysis`),api(`/reviews/${id}/decisions`),api(`/reviews/${id}/evaluation`)
+ [state.findings,state.files,state.units,state.evidence,state.staticResults,state.decisions,state.evaluations]=await Promise.all([
+  api(`/reviews/${id}/findings`),api(`/reviews/${id}/files`),api(`/reviews/${id}/code-units`),api(`/reviews/${id}/evidence`),api(`/reviews/${id}/static-analysis`),api(`/reviews/${id}/decisions`),api(`/reviews/${id}/evaluation`)
  ]);
 }
 function render(){
@@ -128,28 +161,110 @@ function render(){
  $('verifiedCount').textContent=state.decisions.filter(x=>x.status==='VERIFIED').length;
  const ev=state.evaluations.find(x=>x.mode==='proposed')||state.evaluations[0];
  $('precision').textContent=ev?(ev.precision*100).toFixed(0)+'%':'—';$('recall').textContent=ev?(ev.recall*100).toFixed(0)+'%':'—';
- const done=[r.status!=='PENDING',state.findings.length>0,state.evidence.length>0,state.staticResults.length>0,state.decisions.length>0,!!ev];
+ const done=[r.status!=='PENDING'&&r.status!=='FAILED',state.findings.length>0,state.evidence.length>0,state.staticResults.length>0,state.decisions.length>0,!!ev];
  for(let i=1;i<=6;i++){$(`s${i}`).className='step '+(done[i-1]?'done':'')}
- renderFindings();renderEvidence();renderStatic();renderDecisions();renderEvaluation();
+ const status=r.status;
+ renderProgress();
+ const allowed={process:['PENDING','FAILED'].includes(status), 'ai-review':status==='RUNNING'&&state.units.length>0, evidence:status==='RUNNING'&&state.findings.length>0, 'static-analysis':status==='RUNNING'&&state.units.length>0, decision:status==='RUNNING'&&state.findings.length>0&&state.evidence.length>0, evaluation:['RUNNING','COMPLETED'].includes(status)};
+ document.querySelectorAll('[data-action]').forEach(b=>{b.disabled=state.busy||!allowed[b.dataset.action]});
+ $('workflowNote').textContent=status==='PENDING'?'Start by processing the project to discover files and extract code units.':status==='FAILED'?'Processing failed. Review the error and retry processing.':status==='COMPLETED'?'Review completed. Results are read-only; evaluation can be rerun.':'Review is running. Complete the stages in order; the decision stage marks the review completed.';
+ renderFindings();renderFiles();renderUnits();renderEvidence();renderStatic();renderDecisions();renderEvaluation();
 }
+function renderProgress(){
+ const r=state.review;
+ const completed={
+  process:!!r&&((r.status!=='PENDING'&&r.status!=='FAILED')||state.files.length>0||state.units.length>0),
+  'ai-review':state.findings.length>0,
+  evidence:state.evidence.length>0,
+  'static-analysis':state.staticResults.length>0,
+  decision:state.decisions.length>0,
+  evaluation:state.evaluations.length>0
+ };
+ document.querySelectorAll('[data-progress]').forEach(item=>{
+  const key=item.dataset.progress,track=item.querySelector('.progress-track'),fill=item.querySelector('.progress-fill'),label=item.querySelector('.progress-state');
+  const isActive=state.activeStage===key,isDone=completed[key],failed=!!state.stageErrors[key];
+  fill.className='progress-fill';fill.style.width='';track.removeAttribute('aria-valuetext');
+  if(isActive){fill.classList.add('running');track.removeAttribute('aria-valuenow');track.setAttribute('aria-valuetext','In progress');label.textContent=`Running · ${formatElapsed(Date.now()-state.stageStartedAt)}`;}
+  else if(failed){fill.classList.add('failed');fill.style.width='100%';track.setAttribute('aria-valuenow','100');label.textContent='Failed';}
+  else if(isDone){fill.classList.add('done');fill.style.width='100%';track.setAttribute('aria-valuenow','100');label.textContent='Completed';}
+  else{fill.style.width='0';track.setAttribute('aria-valuenow','0');label.textContent='Waiting';}
+ });
+}
+function formatElapsed(ms){const total=Math.max(0,Math.floor(ms/1000));return total<60?`${total}s`:`${Math.floor(total/60)}m ${String(total%60).padStart(2,'0')}s`}
+function startStage(key){state.activeStage=key;state.stageStartedAt=Date.now();delete state.stageErrors[key];if(state.stageTimer)clearInterval(state.stageTimer);state.stageTimer=setInterval(()=>{if(state.activeStage){const item=document.querySelector(`[data-progress="${state.activeStage}"] .progress-state`);if(item)item.textContent=`Running · ${formatElapsed(Date.now()-state.stageStartedAt)}`;}},1000);renderProgress()}
+function finishStage(key,failed=false){if(state.stageTimer){clearInterval(state.stageTimer);state.stageTimer=null;}state.activeStage=null;if(failed)state.stageErrors[key]=true;else delete state.stageErrors[key];renderProgress()}
 function renderFindings(){ $('findings').innerHTML=state.findings.length?state.findings.map(f=>`<article class="finding"><h3>${esc(f.title)}</h3><div class="meta"><span class="sev">${esc(f.severity)}</span> · ${esc(f.category)} · ${esc(f.file)}:${f.start_line}</div><p>${esc(f.description)}</p>${f.reasoning?`<div class="pre">${esc(f.reasoning)}</div>`:''}</article>`).join(''):'<div class="empty">No findings yet.</div>'}
+function renderFiles(){
+ const host=$('files');
+ if(!state.files.length){host.innerHTML='<div class="empty">No source files discovered yet. Run Process Code first.</div>';return}
+ host.innerHTML=`<div class="toolbar"><span class="pill">${state.files.length} source files</span><input class="search" id="fileSearch" placeholder="Filter files…" aria-label="Filter source files"></div><div id="fileRows"></div>`;
+ const draw=term=>{const rows=state.files.filter(f=>String(f.path||'').toLowerCase().includes(term.toLowerCase()));$('fileRows').innerHTML=rows.length?rows.map(f=>`<div class="file-row"><strong>${esc(f.path)}</strong><div class="meta">${esc(f.language||'unknown')} · ${Number(f.size_bytes||0).toLocaleString()} bytes · ${f.line_count??'—'} lines · ${f.sha256?'SHA-256 '+esc(f.sha256.slice(0,12))+'…':'no hash'}</div><div style="margin-top:6px"><span class="pill ${f.processed?'good':f.skip_reason?'bad':'warn'}">${f.processed?'Processed':f.skip_reason?'Skipped':'Not processed'}</span>${f.has_syntax_errors?' <span class="pill bad">Syntax errors</span>':''}</div>${f.skip_reason?`<div class="meta" style="margin-top:6px">${esc(f.skip_reason)}</div>`:''}</div>`).join(''):'<div class="empty">No files match this filter.</div>'};
+ $('fileSearch').oninput=e=>draw(e.target.value);draw('');
+}
+function renderUnits(){
+ const host=$('units');
+ if(!state.units.length){host.innerHTML='<div class="empty">No code units extracted yet. Run Process Code first.</div>';return}
+ host.innerHTML=`<div class="toolbar"><span class="pill">${state.units.length} code units</span><input class="search" id="unitSearch" placeholder="Filter by file, function, or type…" aria-label="Filter code units"></div><div id="unitRows"></div>`;
+ const draw=term=>{const rows=state.units.filter(u=>`${u.file||''} ${u.function_name||''} ${u.class_name||''} ${u.unit_type||''}`.toLowerCase().includes(term.toLowerCase()));$('unitRows').innerHTML=rows.length?rows.map((u,i)=>`<details class="unit-row"><summary><strong>${esc(u.function_name||u.class_name||u.unit_type||'Code unit')}</strong><span class="meta">${esc(u.file)}:${u.start_line}-${u.end_line} · ${esc(u.unit_type)}</span></summary><pre class="code">${esc(u.source_code||'')}</pre></details>`).join(''):'<div class="empty">No code units match this filter.</div>'};
+ $('unitSearch').oninput=e=>draw(e.target.value);draw('');
+}
 function renderEvidence(){ $('evidence').innerHTML=state.evidence.length?state.evidence.map(e=>`<div class="finding"><b>Evidence ${esc(e.evidence_id.slice(0,8))}</b>${e.source?`<div class="meta">Source: ${e.source.found?'found':'not found'} ${e.source.file||''}:${e.source.line||''}</div>`:''}${e.sink?`<div class="meta">Sink: ${e.sink.found?'found':'not found'} ${e.sink.file||''}:${e.sink.line||''}</div>`:''}${e.data_flow?`<div class="meta">Data flow: ${e.data_flow.found?'found':'not found'}</div>`:''}${e.security_control?`<div class="meta">Security control: ${e.security_control.present?'present':'absent'}</div>`:''}</div>`).join(''):'<div class="empty">No evidence yet.</div>'}
 function renderStatic(){ $('static').innerHTML=state.staticResults.length?state.staticResults.map(x=>`<div class="row"><div><b>${esc(x.tool)}</b> · ${esc(x.rule_id||'rule')}</div><div class="meta">${esc(x.file||'')} ${x.start_line?':'+x.start_line:''} · ${x.matched?'MATCH':'NO MATCH'}</div></div>`).join(''):'<div class="empty">No static-analysis results yet.</div>'}
 function renderDecisions(){ $('decisions').innerHTML=state.decisions.length?state.decisions.map(x=>`<div class="finding"><h3>${esc(x.status)} · score ${Number(x.evidence_score).toFixed(0)}/100</h3><div class="meta">Confidence ${(x.confidence*100).toFixed(0)}%</div><p>${esc(x.reason)}</p>${x.remediation?`<div class="pre">Remediation: ${esc(x.remediation)}</div>`:''}</div>`).join(''):'<div class="empty">No decisions yet.</div>'}
 function renderEvaluation(){const a=state.evaluations;if(!a.length){$('evaluation').innerHTML='<div class="empty">No evaluation yet.</div>';return}$('evaluation').innerHTML=a.map(x=>`<div class="finding"><h3>${esc(x.mode)}</h3><div class="metrics"><div class="metric"><b>${x.true_positives}</b><span>True positives</span></div><div class="metric"><b>${x.false_positives}</b><span>False positives</span></div><div class="metric"><b>${(x.precision*100).toFixed(1)}%</b><span>Precision</span></div><div class="metric"><b>${(x.recall*100).toFixed(1)}%</b><span>Recall</span></div></div><div class="meta">Evidence completeness ${(x.evidence_completeness*100).toFixed(1)}% · FPR ${(x.false_positive_rate*100).toFixed(1)}% · matched samples ${x.matched_samples}</div></div>`).join('')}
 async function action(kind){
  if(!state.review){msg($('actionMsg'),'Select a review first',true);return}
- const id=state.review.review_id;const b=document.querySelector(`[data-action="${kind}"]`);
- try{b.disabled=true;msg($('actionMsg'),'Running '+kind+'…');
+ const id=state.review.review_id;
+ try{state.busy=true;startStage(kind);document.querySelectorAll('[data-action]').forEach(x=>x.disabled=true);msg($('actionMsg'),'Running '+kind+'… Elapsed time is shown below; the bar indicates active processing, not an estimated percentage.');
  let path='/reviews/'+id+'/'+kind,opts={method:'POST'};
  if(kind==='evaluation')path+='?mode=proposed';
- await api(path,opts);state.review=await api('/reviews/'+id);await loadData();render();await loadReviews();msg($('actionMsg'),kind+' completed.')}
- catch(e){msg($('actionMsg'),e.message,true)}finally{b.disabled=false}
+ await api(path,opts);state.review=await api('/reviews/'+id);await loadData();finishStage(kind);render();await loadReviews();msg($('actionMsg'),kind+' completed.')}
+ catch(e){finishStage(kind,true);msg($('actionMsg'),e.message,true);try{state.review=await api('/reviews/'+id);await loadData();render();await loadReviews()}catch{}}
+ finally{state.busy=false;if(state.review)render()}
 }
-$('createForm').onsubmit=async e=>{e.preventDefault();try{msg($('createMsg'),'Creating…');const r=await api('/reviews',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_name:$('projectName').value.trim(),project_path:$('projectPath').value.trim()})});$('projectName').value='';state.review=r;await loadReviews();await loadData();render();msg($('createMsg'),'Review created.')}catch(x){msg($('createMsg'),x.message,true)}};
+function hideUploadProgress(){$('uploadProgress').hidden=true}
+function uploadFolderWithProgress(form,fileCount){
+ const box=$('uploadProgress'),fill=$('uploadProgressFill'),label=$('uploadProgressLabel'),track=box.querySelector('.progress-track');
+ box.hidden=false;fill.style.width='0%';label.textContent='Starting upload…';track.setAttribute('aria-valuenow','0');
+ return new Promise((resolve,reject)=>{
+  const xhr=new XMLHttpRequest();xhr.open('POST','/reviews/upload-folder');xhr.responseType='json';
+  xhr.upload.addEventListener('progress',event=>{if(!event.lengthComputable){label.textContent=`Uploading ${fileCount} Python files…`;return}const percent=Math.max(0,Math.min(100,Math.round(event.loaded/event.total*100)));fill.style.width=percent+'%';track.setAttribute('aria-valuenow',String(percent));label.textContent=`Uploading · ${percent}%`;});
+  xhr.upload.addEventListener('load',()=>{label.textContent='Upload received · creating review…';fill.style.width='100%';track.setAttribute('aria-valuenow','100');});
+  xhr.addEventListener('load',()=>{const data=xhr.response||{};if(xhr.status<200||xhr.status>=300){reject(new Error(data.detail||`HTTP ${xhr.status}`));return}label.textContent='Complete · 100%';fill.style.width='100%';resolve(data);});
+  xhr.addEventListener('error',()=>reject(new Error('Upload failed. Check that the backend is running and try again.')));
+  xhr.addEventListener('abort',()=>reject(new Error('Upload was cancelled.')));
+  xhr.send(form);
+ });
+}
+const folderInput=$('projectFolder');
+folderInput.addEventListener('change',()=>{
+ const files=Array.from(folderInput.files||[]);
+ const pyFiles=files.filter(f=>f.name.toLowerCase().endsWith('.py'));
+ const first=files[0]?.webkitRelativePath||'';
+ const folderName=first.split('/')[0]||'';
+ $('folderSelection').textContent=files.length
+   ? `${folderName||'Selected folder'} · ${pyFiles.length} Python files · ${files.length} total files`
+   : 'No folder selected.';
+});
+$('createForm').onsubmit=async e=>{
+ e.preventDefault();
+ const files=Array.from(folderInput.files||[]).filter(f=>f.name.toLowerCase().endsWith('.py'));
+ if(!files.length){msg($('createMsg'),'Choose a folder containing at least one .py file.',true);return}
+ const totalBytes=files.reduce((sum,f)=>sum+f.size,0);
+ if(totalBytes>25*1024*1024){msg($('createMsg'),'Selected Python files exceed the 25 MB upload limit.',true);return}
+ try{
+   msg($('createMsg'),`Uploading ${files.length} Python files and creating review…`);
+   const form=new FormData();
+   form.append('project_name',$('projectName').value.trim());
+   files.forEach(file=>form.append('files',file,file.webkitRelativePath||file.name));
+   const r=await uploadFolderWithProgress(form,files.length);
+   $('projectName').value='';folderInput.value='';$('folderSelection').textContent='No folder selected.';
+   state.review=r;await loadReviews();await loadData();render();msg($('createMsg'),'Folder uploaded and review created.');setTimeout(hideUploadProgress,1200);
+ }catch(x){hideUploadProgress();msg($('createMsg'),x.message,true)}
+};
 document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>action(b.dataset.action));
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab,.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active')});
-$('refresh').onclick=async()=>{await loadReviews();if(state.review){state.review=await api('/reviews/'+state.review.review_id);await loadData();render()}};
+$('refresh').onclick=async()=>{try{await loadReviews();if(state.review){state.review=await api('/reviews/'+state.review.review_id);await loadData();render();msg($('actionMsg'),'Review data refreshed.')}}catch(e){msg($('actionMsg'),e.message,true)}};
 loadReviews();
 })();
 </script>
