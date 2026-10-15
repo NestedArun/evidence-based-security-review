@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evidence-Based Security Review</title>
+<style>
+:root{font-family:Inter,Segoe UI,Arial,sans-serif;color:#172033;background:#f5f7fb}
+*{box-sizing:border-box}body{margin:0}.wrap{max-width:1180px;margin:0 auto;padding:28px 18px 50px}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:22px}
+h1{font-size:25px;margin:0}.sub{color:#687386;font-size:13px;margin-top:5px}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:18px}
+.card{background:#fff;border:1px solid #e1e6ef;border-radius:12px;padding:18px}
+h2{font-size:16px;margin:0 0 14px}.field{margin-bottom:12px}label{display:block;font-size:12px;font-weight:650;margin-bottom:6px;color:#4c5769}
+input,select{width:100%;padding:10px 11px;border:1px solid #ccd4e0;border-radius:8px;background:#fff;font-size:14px}
+button{border:0;border-radius:8px;padding:10px 13px;background:#27364d;color:white;font-weight:650;cursor:pointer}
+button.secondary{background:#edf1f6;color:#27364d}button:disabled{opacity:.45;cursor:not-allowed}
+.actions{display:flex;flex-wrap:wrap;gap:8px}.reviews{display:flex;flex-direction:column;gap:7px;max-height:440px;overflow:auto}
+.review{padding:10px;border:1px solid #e1e6ef;border-radius:8px;cursor:pointer}.review.active{border-color:#526a8a;background:#f3f6fa}
+.review strong{display:block;font-size:13px}.review small{color:#7a8494}
+.status{display:inline-block;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700;margin-top:7px;background:#eef2f7}
+.status.COMPLETED{background:#e7f5eb;color:#24713b}.status.RUNNING{background:#fff4d6;color:#805b00}.status.FAILED{background:#fdeaea;color:#9a2f2f}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.metric{border:1px solid #e1e6ef;border-radius:9px;padding:12px}.metric b{display:block;font-size:22px}.metric span{font-size:11px;color:#727d8e}
+.pipeline{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-bottom:16px}.step{font-size:11px;text-align:center;padding:9px 4px;border-radius:7px;background:#eef1f5;color:#697486}.step.done{background:#e7f5eb;color:#24713b}.step.current{background:#e9eef7;color:#314b70;font-weight:700}
+.tabs{display:flex;gap:5px;border-bottom:1px solid #e1e6ef;margin-bottom:14px}.tab{background:transparent;color:#687386;border-radius:7px 7px 0 0}.tab.active{background:#eef2f7;color:#172033}
+.panel{display:none}.panel.active{display:block}.row{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid #edf0f4}.row:last-child{border-bottom:0}
+.finding{border:1px solid #e0e5ed;border-radius:9px;padding:13px;margin-bottom:9px}.finding h3{font-size:14px;margin:0 0 7px}.meta{font-size:12px;color:#697486}.sev{font-weight:700}.pre{white-space:pre-wrap;background:#f6f8fa;border-radius:7px;padding:9px;font:12px Consolas,monospace;overflow:auto}
+.notice{font-size:12px;color:#687386;margin-top:9px;min-height:17px}.error{color:#9a2f2f}.empty{color:#7a8494;padding:18px 0;text-align:center;font-size:13px}
+@media(max-width:850px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.pipeline{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div><h1>Evidence-Based Security Code Review</h1><div class="sub">Basic demonstration interface for the six-checkpoint review pipeline</div></div>
+  <button class="secondary" id="refresh">Refresh</button>
+</header>
+
+<div class="grid">
+<aside>
+  <section class="card">
+    <h2>New Review</h2>
+    <form id="createForm">
+      <div class="field"><label>Project name</label><input id="projectName" required placeholder="Demo Project"></div>
+      <div class="field"><label>Project path</label><input id="projectPath" required placeholder="C:\path\to\project"></div>
+      <button type="submit">Create Review</button>
+    </form>
+    <div id="createMsg" class="notice"></div>
+  </section>
+  <section class="card" style="margin-top:18px">
+    <h2>Reviews</h2><div id="reviewList" class="reviews"></div>
+  </section>
+</aside>
+
+<main>
+<section class="card">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+    <div><h2 id="reviewTitle">Select a review</h2><div id="reviewMeta" class="sub">No review selected</div></div>
+    <span id="reviewStatus" class="status">—</span>
+  </div>
+  <div class="metrics" style="margin-top:16px">
+    <div class="metric"><b id="findingCount">—</b><span>Findings</span></div>
+    <div class="metric"><b id="verifiedCount">—</b><span>Verified</span></div>
+    <div class="metric"><b id="precision">—</b><span>Precision</span></div>
+    <div class="metric"><b id="recall">—</b><span>Recall</span></div>
+  </div>
+  <div class="pipeline">
+    <div id="s1" class="step">1 · Process</div><div id="s2" class="step">2 · AI Review</div>
+    <div id="s3" class="step">3 · Evidence</div><div id="s4" class="step">4 · Static</div>
+    <div id="s5" class="step">5 · Decision</div><div id="s6" class="step">6 · Evaluation</div>
+  </div>
+  <div class="actions">
+    <button data-action="process">Process Code</button>
+    <button data-action="ai-review">Run AI Review</button>
+    <button data-action="evidence">Verify Evidence</button>
+    <button data-action="static-analysis">Static Analysis</button>
+    <button data-action="decision">Make Decisions</button>
+    <button data-action="evaluation">Evaluate</button>
+  </div>
+  <div id="actionMsg" class="notice"></div>
+</section>
+
+<section class="card" style="margin-top:18px">
+<div class="tabs">
+  <button class="tab active" data-tab="findings">Findings</button>
+  <button class="tab" data-tab="evidence">Evidence</button>
+  <button class="tab" data-tab="static">Static Analysis</button>
+  <button class="tab" data-tab="decisions">Decisions</button>
+  <button class="tab" data-tab="evaluation">Evaluation</button>
+</div>
+<div id="findings" class="panel active"></div>
+<div id="evidence" class="panel"></div>
+<div id="static" class="panel"></div>
+<div id="decisions" class="panel"></div>
+<div id="evaluation" class="panel"></div>
+</section>
+</main>
+</div>
+</div>
+
+<script>
+(() => {
+const state={review:null,findings:[],evidence:[],staticResults:[],decisions:[],evaluations:[]};
+const $=id=>document.getElementById(id);
+async function api(path,opts={}){const r=await fetch(path,opts);let data={};try{data=await r.json()}catch{}if(!r.ok)throw new Error(data.detail||`HTTP ${r.status}`);return data}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function msg(el,text,error=false){el.textContent=text;el.className='notice'+(error?' error':'')}
+async function loadReviews(){
+ try{const rows=await api('/reviews');$('reviewList').innerHTML=rows.length?rows.map(r=>`<div class="review ${state.review?.review_id===r.review_id?'active':''}" data-id="${r.review_id}"><strong>${esc(r.project_name)}</strong><small>${esc(r.review_id.slice(0,8))}</small><br><span class="status ${r.status}">${r.status}</span></div>`).join(''):'<div class="empty">No reviews yet</div>';
+ document.querySelectorAll('.review').forEach(x=>x.onclick=()=>selectReview(x.dataset.id));
+ }catch(e){$('reviewList').innerHTML='<div class="empty error">'+esc(e.message)+'</div>'}
+}
+async function selectReview(id){
+ try{state.review=await api('/reviews/'+id);await loadData();render();await loadReviews()}catch(e){msg($('actionMsg'),e.message,true)}
+}
+async function loadData(){
+ if(!state.review)return;
+ const id=state.review.review_id;
+ [state.findings,state.evidence,state.staticResults,state.decisions,state.evaluations]=await Promise.all([
+  api(`/reviews/${id}/findings`),api(`/reviews/${id}/evidence`),api(`/reviews/${id}/static-analysis`),api(`/reviews/${id}/decisions`),api(`/reviews/${id}/evaluation`)
+ ]);
+}
+function render(){
+ const r=state.review;if(!r)return;
+ $('reviewTitle').textContent=r.project_name;$('reviewMeta').textContent=`Review ID: ${r.review_id}`;
+ $('reviewStatus').textContent=r.status;$('reviewStatus').className='status '+r.status;
+ $('findingCount').textContent=state.findings.length;
+ $('verifiedCount').textContent=state.decisions.filter(x=>x.status==='VERIFIED').length;
+ const ev=state.evaluations.find(x=>x.mode==='proposed')||state.evaluations[0];
+ $('precision').textContent=ev?(ev.precision*100).toFixed(0)+'%':'—';$('recall').textContent=ev?(ev.recall*100).toFixed(0)+'%':'—';
+ const done=[r.status!=='PENDING',state.findings.length>0,state.evidence.length>0,state.staticResults.length>0,state.decisions.length>0,!!ev];
+ for(let i=1;i<=6;i++){$(`s${i}`).className='step '+(done[i-1]?'done':'')}
+ renderFindings();renderEvidence();renderStatic();renderDecisions();renderEvaluation();
+}
+function renderFindings(){ $('findings').innerHTML=state.findings.length?state.findings.map(f=>`<article class="finding"><h3>${esc(f.title)}</h3><div class="meta"><span class="sev">${esc(f.severity)}</span> · ${esc(f.category)} · ${esc(f.file)}:${f.start_line}</div><p>${esc(f.description)}</p>${f.reasoning?`<div class="pre">${esc(f.reasoning)}</div>`:''}</article>`).join(''):'<div class="empty">No findings yet.</div>'}
+function renderEvidence(){ $('evidence').innerHTML=state.evidence.length?state.evidence.map(e=>`<div class="finding"><b>Evidence ${esc(e.evidence_id.slice(0,8))}</b>${e.source?`<div class="meta">Source: ${e.source.found?'found':'not found'} ${e.source.file||''}:${e.source.line||''}</div>`:''}${e.sink?`<div class="meta">Sink: ${e.sink.found?'found':'not found'} ${e.sink.file||''}:${e.sink.line||''}</div>`:''}${e.data_flow?`<div class="meta">Data flow: ${e.data_flow.found?'found':'not found'}</div>`:''}${e.security_control?`<div class="meta">Security control: ${e.security_control.present?'present':'absent'}</div>`:''}</div>`).join(''):'<div class="empty">No evidence yet.</div>'}
+function renderStatic(){ $('static').innerHTML=state.staticResults.length?state.staticResults.map(x=>`<div class="row"><div><b>${esc(x.tool)}</b> · ${esc(x.rule_id||'rule')}</div><div class="meta">${esc(x.file||'')} ${x.start_line?':'+x.start_line:''} · ${x.matched?'MATCH':'NO MATCH'}</div></div>`).join(''):'<div class="empty">No static-analysis results yet.</div>'}
+function renderDecisions(){ $('decisions').innerHTML=state.decisions.length?state.decisions.map(x=>`<div class="finding"><h3>${esc(x.status)} · score ${Number(x.evidence_score).toFixed(0)}/100</h3><div class="meta">Confidence ${(x.confidence*100).toFixed(0)}%</div><p>${esc(x.reason)}</p>${x.remediation?`<div class="pre">Remediation: ${esc(x.remediation)}</div>`:''}</div>`).join(''):'<div class="empty">No decisions yet.</div>'}
+function renderEvaluation(){const a=state.evaluations;if(!a.length){$('evaluation').innerHTML='<div class="empty">No evaluation yet.</div>';return}$('evaluation').innerHTML=a.map(x=>`<div class="finding"><h3>${esc(x.mode)}</h3><div class="metrics"><div class="metric"><b>${x.true_positives}</b><span>True positives</span></div><div class="metric"><b>${x.false_positives}</b><span>False positives</span></div><div class="metric"><b>${(x.precision*100).toFixed(1)}%</b><span>Precision</span></div><div class="metric"><b>${(x.recall*100).toFixed(1)}%</b><span>Recall</span></div></div><div class="meta">Evidence completeness ${(x.evidence_completeness*100).toFixed(1)}% · FPR ${(x.false_positive_rate*100).toFixed(1)}% · matched samples ${x.matched_samples}</div></div>`).join('')}
+async function action(kind){
+ if(!state.review){msg($('actionMsg'),'Select a review first',true);return}
+ const id=state.review.review_id;const b=document.querySelector(`[data-action="${kind}"]`);
+ try{b.disabled=true;msg($('actionMsg'),'Running '+kind+'…');
+ let path='/reviews/'+id+'/'+kind,opts={method:'POST'};
+ if(kind==='evaluation')path+='?mode=proposed';
+ await api(path,opts);state.review=await api('/reviews/'+id);await loadData();render();await loadReviews();msg($('actionMsg'),kind+' completed.')}
+ catch(e){msg($('actionMsg'),e.message,true)}finally{b.disabled=false}
+}
+$('createForm').onsubmit=async e=>{e.preventDefault();try{msg($('createMsg'),'Creating…');const r=await api('/reviews',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_name:$('projectName').value.trim(),project_path:$('projectPath').value.trim()})});$('projectName').value='';state.review=r;await loadReviews();await loadData();render();msg($('createMsg'),'Review created.')}catch(x){msg($('createMsg'),x.message,true)}};
+document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>action(b.dataset.action));
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab,.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active')});
+$('refresh').onclick=async()=>{await loadReviews();if(state.review){state.review=await api('/reviews/'+state.review.review_id);await loadData();render()}};
+loadReviews();
+})();
+</script>
+</body>
+</html>

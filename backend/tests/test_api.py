@@ -139,3 +139,101 @@ def test_submitted_code_is_never_executed(client, make_project):
 def test_evidence_requires_running_review(client, make_project):
     rid = _create(client, make_project({"a.py": "x = 1\n"})).json()["review_id"]
     assert client.post(f"/reviews/{rid}/evidence").status_code == 409
+
+
+
+def test_ai_review_rerun_replaces_stale_outputs(client, make_project, monkeypatch):
+    from app.models import (
+        DecisionRow,
+        EvaluationRunRow,
+        EvidenceRow,
+        FindingRow,
+        StaticResultRow,
+    )
+    import app.processing.ai as ai_processing
+
+    root = make_project({"a.py": "def f(value):\\n    return value\\n"})
+    review_id = _create(client, root).json()["review_id"]
+    assert client.post(f"/reviews/{review_id}/process").status_code == 200
+
+    old_finding_id = "old-finding"
+    session = client.app.state.session_factory()
+    try:
+        session.add(FindingRow(
+            finding_id=old_finding_id,
+            review_id=review_id,
+            agent="security_review",
+            title="Old candidate",
+            category="sql_injection",
+            cwe="CWE-89",
+            severity="HIGH",
+            file="a.py",
+            start_line=1,
+            end_line=2,
+            function="f",
+            description="Old candidate description",
+            reasoning="Old reasoning",
+        ))
+        session.flush()
+        session.add_all([
+            EvidenceRow(
+                evidence_id="old-evidence",
+                finding_id=old_finding_id,
+                source={"line": 1},
+                sink=None,
+                data_flow=None,
+                security_control=None,
+            ),
+            DecisionRow(
+                decision_id="old-decision",
+                finding_id=old_finding_id,
+                status="VERIFIED",
+                evidence_score=80.0,
+                confidence=0.8,
+                reason="Old decision",
+                remediation=None,
+            ),
+            StaticResultRow(
+                result_id="old-static",
+                review_id=review_id,
+                finding_id=old_finding_id,
+                tool="test",
+                matched=True,
+                rule_id="TEST-1",
+                severity="HIGH",
+                file="a.py",
+                start_line=1,
+                end_line=2,
+                message="Old static result",
+            ),
+            EvaluationRunRow(
+                evaluation_id="old-evaluation",
+                review_id=review_id,
+                mode="proposed",
+                true_positives=1,
+                false_positives=0,
+                false_negatives=0,
+                true_negatives=0,
+                precision=1.0,
+                recall=1.0,
+                false_positive_rate=0.0,
+                evidence_completeness=1.0,
+                predictions=1,
+                matched_samples=1,
+            ),
+        ])
+        session.commit()
+    finally:
+        session.close()
+
+    # Simulate a successful rerun that produces no candidate findings.
+    monkeypatch.setattr(ai_processing, "run_agent", lambda client, spec, unit: None)
+
+    response = client.post(f"/reviews/{review_id}/ai-review")
+    assert response.status_code == 200
+    assert response.json()["findings"] == 0
+    assert client.get(f"/reviews/{review_id}/findings").json() == []
+    assert client.get(f"/reviews/{review_id}/evidence").json() == []
+    assert client.get(f"/reviews/{review_id}/static-analysis").json() == []
+    assert client.get(f"/reviews/{review_id}/decisions").json() == []
+    assert client.get(f"/reviews/{review_id}/evaluation").json() == []

@@ -4,12 +4,20 @@ from __future__ import annotations
 import os
 from concurrent.futures import ThreadPoolExecutor
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.agents import AGENTS, run_agent
 from app.llm import OllamaClient
-from app.models import CodeUnitRow, FindingRow, ReviewRow
+from app.models import (
+    CodeUnitRow,
+    DecisionRow,
+    EvaluationRunRow,
+    EvidenceRow,
+    FindingRow,
+    ReviewRow,
+    StaticResultRow,
+)
 from app.schemas import CandidateFinding
 
 
@@ -35,7 +43,6 @@ def _is_import_only_unit(unit) -> bool:
         line.startswith("import ") or line.startswith("from ")
         for line in lines
     )
-
 
 def run_ai_review(
     session: Session,
@@ -93,6 +100,45 @@ def run_ai_review(
         for finding in executor.map(review_agent, jobs):
             if finding is not None:
                 findings.append(finding)
+
+    # Replace prior outputs only after every model call succeeds. This makes
+    # repeated AI-review requests idempotent and prevents stale evidence,
+    # static-analysis matches, decisions, or evaluation metrics from surviving
+    # after the candidate findings have changed.
+    old_finding_ids = session.scalars(
+        select(FindingRow.finding_id).where(
+            FindingRow.review_id == review.review_id
+        )
+    ).all()
+
+    if old_finding_ids:
+        session.execute(
+            delete(EvidenceRow).where(
+                EvidenceRow.finding_id.in_(old_finding_ids)
+            )
+        )
+        session.execute(
+            delete(DecisionRow).where(
+                DecisionRow.finding_id.in_(old_finding_ids)
+            )
+        )
+
+    # Static results include unmatched analyzer results, so clear by review ID.
+    session.execute(
+        delete(StaticResultRow).where(
+            StaticResultRow.review_id == review.review_id
+        )
+    )
+    session.execute(
+        delete(FindingRow).where(
+            FindingRow.review_id == review.review_id
+        )
+    )
+    session.execute(
+        delete(EvaluationRunRow).where(
+            EvaluationRunRow.review_id == review.review_id
+        )
+    )
 
     # Database writes remain on the request/session thread.
     for finding in findings:

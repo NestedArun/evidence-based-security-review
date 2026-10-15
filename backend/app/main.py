@@ -5,8 +5,10 @@ Run locally:  uvicorn app.main:app --reload   (from the backend/ directory)
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.api.reviews import router as reviews_router
 from app.config import Settings, load_project_config
@@ -37,6 +39,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {"status": "ok", "version": project_config.project.version}
 
     app.include_router(reviews_router)
+
+    # Basic demonstration UI. API routes are registered first so they remain
+    # available; the root mount serves frontend/index.html for local demos.
+    frontend_dir = Path(__file__).resolve().parents[2] / "frontend"
+    if frontend_dir.is_dir():
+        app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+
     return app
 
 

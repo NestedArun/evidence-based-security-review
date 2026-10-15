@@ -55,3 +55,20 @@ the review's findings so the result is reproducible rather than duplicated.
 
 Checkpoint 3 does not create final decisions; `VERIFIED`, `UNCERTAIN`, and `REJECTED` remain
 reserved for the later Judge/Decision checkpoint.
+
+
+## Demo UI
+
+The repository includes a minimal browser UI for demonstration purposes.
+
+Run the backend from the repository root:
+
+    cd backend
+    uvicorn app.main:app --reload
+
+Then open:
+
+    http://127.0.0.1:8000/
+
+The UI is only a presentation layer over the existing review API. It does not
+replace or alter the six checkpoint implementations.
